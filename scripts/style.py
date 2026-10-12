@@ -9,8 +9,8 @@ BG, INK, MUTED = "#04070b", "#e4ece9", "#7f9590"
 ACCENT, DEEP, CORAL = "#9ed0c4", "#4682aa", "#e8735a"
 ROLL, GARCH, EWMA = "#8fb8d6", "#d9c9a6", "#b49fd6"
 
-# Sequential deep-sea -> aqua ramp for heatmaps (replaces viridis, which clashes with the palette).
-AQUA = LinearSegmentedColormap.from_list("aqua", ["#06121c", "#0d2a40", "#1b4d6b", DEEP, "#6fb3b8", ACCENT, "#e4ece9"])
+# Sequential deep indigo -> light blue ramp for heatmaps (replaces viridis, which clashes with the palette).
+AQUA = LinearSegmentedColormap.from_list("aqua", ["#1b1450", "#2c2f86", "#3f5bb0", "#5f8fd0", "#93c1e6", "#c9e6f5"])
 
 
 def apply() -> None:
