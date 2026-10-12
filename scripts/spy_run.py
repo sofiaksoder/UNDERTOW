@@ -113,15 +113,16 @@ def main() -> None:
         "diebold_mariano_qlike_2019_2024": dm, "diebold_mariano_qlike_2020_feb_jun": dm_crash}, indent=2))
 
     # figure: fitted filter vs baselines through the 2020 crash
+    style.apply()
     f0 = runs["Particle filter (fitted)"][0]
     sel = (dates >= "2019-10-01") & (dates <= "2020-12-31")
     x = dates[sel]
     fig, ax = plt.subplots(3, 1, figsize=(8, 7.4), sharex=True, gridspec_kw={"height_ratios": [1, 2, 0.8]})
     ax[0].plot(x, prices.reindex(dates)[sel], color=style.INK, lw=1); ax[0].set_ylabel("SPY adj. close")
     ax[1].fill_between(x, annualize(f0.quantiles[sel, 0]), annualize(f0.quantiles[sel, 4]),
-                       color=style.DEEP, alpha=0.3, lw=0, label="PF 90% band")
+                       color=style.DEEP, alpha=0.4, lw=0, label="PF 90% band")
     ax[1].fill_between(x, annualize(f0.quantiles[sel, 1]), annualize(f0.quantiles[sel, 3]),
-                       color=style.DEEP, alpha=0.5, lw=0, label="PF 50% band")
+                       color=style.DEEP, alpha=0.7, lw=0, label="PF 50% band")
     ax[1].plot(x, annualize(f0.quantiles[sel, 2]), color=style.ACCENT, lw=1.6, label="PF median (fitted)")
     ax[1].plot(x, annualize(forecasts["EWMA (0.94)"][0][sel]), color=style.EWMA, lw=1, label="EWMA 0.94")
     ax[1].plot(x, annualize(forecasts["GARCH(1,1), fit on 2010-2018"][0][sel]), color=style.GARCH, lw=1,

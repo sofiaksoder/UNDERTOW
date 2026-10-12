@@ -118,7 +118,7 @@ def main() -> None:
         if abs(j["off"] - best["off"]) < 1e-9:
             grid[PHIS.index(j["phi"]), SIGS.index(j["sig"])] = v
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
-    im = ax.imshow(grid - np.nanmax(grid), origin="lower", aspect="auto", cmap="viridis",
+    im = ax.imshow(grid - np.nanmax(grid), origin="lower", aspect="auto", cmap=style.AQUA,
                    vmin=-200, vmax=0)
     ax.set_xticks(range(len(SIGS)), [f"{x:.2f}" for x in SIGS]); ax.set_yticks(range(len(PHIS)),
                                                                             [f"{x:.3f}" for x in PHIS])
