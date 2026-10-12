@@ -38,12 +38,12 @@ section.band:last-child{border-bottom:0;}
 .side{flex:1 1 280px;max-width:100%;min-width:0;border-left:1px solid var(--rule);padding:12px 0 12px 16px;display:flex;flex-direction:column;gap:18px;}
 .cap{display:flex;justify-content:space-between;gap:12px;color:var(--muted);flex-wrap:wrap;}
 .cap b{color:var(--ink);font-weight:400;}
-.cap+.cv{margin-bottom:0;} .gap8{margin-top:8px;}
+.cap+.cv{margin-bottom:0;} .gap8{margin-top:12px;}
 .cv{position:relative;}
 .cv canvas{position:absolute;inset:0;width:100%;height:100%;}
 .num{font:200 76px/1.15 'Geist',sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
 .row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dotted var(--rule);font-variant-numeric:tabular-nums;}
-.row .k{color:var(--faint);margin-right:8px;} .row .v{text-transform:none;}
+.row .v{text-transform:none;}
 .grp{display:flex;flex-direction:column;gap:8px;}
 .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
 .three button{padding:9px 6px;}
@@ -56,7 +56,8 @@ section.band:last-child{border-bottom:0;}
 #wave{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-color:var(--coral);}
 #wave i{font-style:normal;color:var(--coral);text-transform:none;}
 .chk{display:flex;align-items:center;gap:8px;color:var(--ink2);cursor:pointer;}
-.chk input{accent-color:var(--accent);width:14px;height:14px;margin:0;}
+.chk input{appearance:none;-webkit-appearance:none;margin:0;font:inherit;cursor:pointer;} .chk input::before{content:'[ ]';color:var(--muted);} .chk input:checked::before{content:'[×]';color:var(--ink);} .chk input:focus-visible{outline:1px solid var(--accent);outline-offset:3px;}
+[hidden]{display:none!important;}
 .chip{display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px dotted var(--rule);padding:5px 0;text-align:left;width:100%;}
 .chip .box{color:var(--muted);margin-right:10px;} .chip .sw{width:28px;height:0;flex:none;}
 .step{display:grid;grid-template-columns:28px 1fr;gap:6px;}
@@ -114,22 +115,22 @@ section.band:last-child{border-bottom:0;}
 <div class="wrap">
 
 <header>
-  <div class="brand"><h1>UNDERTOW</h1><span class="muted">Subsurface market volatility</span></div>
+  <div class="brand"><h1>UNDERTOW</h1></div>
   <a class="guide" href="guide.html">Guide →</a>
-  <div class="meta"><span class="tag" id="seedTag">SEED 0005</span><span id="dayLabel"></span><span id="nHead"></span><span>LIVE <span id="live"></span></span></div>
+  <div class="meta"><span id="dayLabel"></span><span id="nHead"></span><span id="live"></span></div>
 </header>
 <div class="caption" id="caption" aria-live="off"></div>
 
 <section class="band">
   <div class="chart" id="stack">
-    <div class="cap"><span><b>00</b> · Posterior density (sea state) <span class="sub">p(σ_t | r_1:t)</span> · last 64 days</span><span>DEPTH = TIME · HEIGHT = DENSITY</span></div>
+    <div class="cap"><span><b>00</b> · Posterior density <span class="sub">p(σ_t | r_1:t)</span> · last 64 days</span><span>DEPTH = TIME · HEIGHT = DENSITY</span></div>
     <div class="cv" style="height:clamp(300px,40vw,460px)"><canvas id="surf" role="img" aria-label="Posterior density surface over the last 64 days"></canvas></div>
   </div>
   <aside class="side" style="gap:14px">
     <div style="display:flex;flex-direction:column;gap:2px">
       <span class="muted">FILTERED VOL · % ANN.</span>
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="num" id="volAnn"></span><span class="tag" id="volDelta" style="color:var(--ink)"></span></div>
-      <span style="color:var(--accent);display:flex;gap:8px;align-items:center"><span id="arrow" style="display:inline-block">→</span><span id="current"></span></span>
+      <span style="color:var(--accent);display:flex;gap:8px;align-items:center"><span id="current"></span></span>
     </div>
     <div id="rows"></div>
   </aside>
@@ -137,11 +138,11 @@ section.band:last-child{border-bottom:0;}
 
 <section class="band">
   <main class="chart">
-    <div class="cap"><span><b>01</b> · Price and returns (surface) · <span class="sub">±2σ</span> envelope</span><span id="fcLabel"></span></div>
-    <div class="cv" style="height:220px"><canvas id="price" role="img" aria-label="Price chart with volatility envelope and return bars"></canvas></div>
-    <div class="cap gap8"><span><b>02</b> · Volatility estimate (undercurrent) · % ann.</span><span>MEDIAN · 50 · 90</span></div>
-    <div class="cv" style="height:240px"><canvas id="fan" role="img" aria-label="Posterior volatility fan"></canvas></div>
-    <div class="cap gap8"><span><b>03</b> · Particle health (soundings) · ESS / N</span><span>RESAMPLE &lt; 0.50</span></div>
+    <div class="cap"><span><b>01</b> · Price and returns · <span class="sub">±2σ</span> envelope</span><span id="fcLabel"></span></div>
+    <div class="cv" style="flex:1 1 220px;min-height:220px"><canvas id="price" role="img" aria-label="Price chart with volatility envelope and return bars"></canvas></div>
+    <div class="cap gap8"><span><b>02</b> · Volatility estimate · % ann.</span><span>MEDIAN · 50 · 90</span></div>
+    <div class="cv" style="flex:1 1 240px;min-height:240px"><canvas id="fan" role="img" aria-label="Posterior volatility fan"></canvas></div>
+    <div class="cap gap8"><span><b>03</b> · Particle health · ESS / N</span><span>RESAMPLE &lt; 0.50</span></div>
     <div class="cv" style="height:96px"><canvas id="ess" role="img" aria-label="Effective sample size over time"></canvas></div>
   </main>
   <aside class="side">
@@ -149,13 +150,12 @@ section.band:last-child{border-bottom:0;}
       <span class="muted">PLAYBACK</span>
       <div class="three"><button id="play">Play</button><button id="step">Step →</button><button id="reset" title="Back to day 70: the first 70 days are the filter's warm-up">Reset</button></div>
       <label><span class="lab"><span>DRIFT SPEED</span><span id="speedLab" style="text-transform:none"></span></span><input id="speed" type="range" min="0.5" max="12" step="0.5" value="3"></label>
-      <p class="note">Time starts at day 70 and loops back there. The first 70 days are warm-up: the filter begins from a vague prior and needs time to settle, and the sea-state surface needs 64 days of history.</p>
     </div>
     <div class="grp">
       <span class="muted">CONDITIONS</span>
       <div class="presets" role="group" aria-label="Regime preset" id="presets"></div>
-      <button id="wave"><span>Add a shock (rogue wave)</span><i>+1.5 h_t</i></button>
-      <label class="chk"><input id="fc" type="checkbox" checked> 20-DAY DRIFT FORECAST · MONTE CARLO</label>
+      <button id="wave"><span>Add a shock</span><i>+1.5 h_t</i></button>
+      <label class="chk"><input id="fc" type="checkbox" checked> 20-DAY FORECAST FAN · MONTE CARLO</label>
     </div>
     <div class="grp" style="gap:6px"><span class="muted">OVERLAYS</span><div id="chips"></div></div>
     <div class="grp" style="gap:10px">
@@ -166,7 +166,7 @@ section.band:last-child{border-bottom:0;}
       <label class="chk"><input id="jump" type="checkbox"> JUMP COMPONENT (SHOCK-ROBUST)</label>
       <label class="chk"><input id="tnoise" type="checkbox"> STUDENT-T NOISE (FAT TAILS)</label>
     </div>
-    <div class="grp" style="gap:10px">
+    <div class="grp" id="truthGrp" style="gap:10px">
       <span class="muted" title="How the simulated market really behaves. Not available for real data.">DATA · SIMULATED TRUTH</span>
       <label><span class="lab"><span><span class="sub">φ</span> TRUE PERSISTENCE</span><span id="phiTLab"></span></span><input id="phiT" type="range" min="0.80" max="0.995" step="0.005" value="0.97"></label>
       <label><span class="lab"><span><span class="sub">σ_η</span> TRUE VOL OF VOL</span><span id="sigTLab"></span></span><input id="sigT" type="range" min="0.05" max="0.40" step="0.01" value="0.15"></label>
@@ -176,7 +176,7 @@ section.band:last-child{border-bottom:0;}
 
 <section class="band">
   <div class="chart" style="padding-bottom:0">
-    <div class="cap"><span><b>04</b> · Particle cloud (shoal) · day <span id="dayN"></span></span><span id="drawn"></span></div>
+    <div class="cap"><span><b>04</b> · Particle cloud · day <span id="dayN"></span></span><span id="drawn"></span></div>
     <div class="cv" style="height:170px"><canvas id="strip" role="img" aria-label="Live particle strip showing predict, weight, resample"></canvas></div>
   </div>
   <div class="side" style="padding-bottom:0;gap:12px">
@@ -471,7 +471,7 @@ function drawStrip(day,phase){
   for(let i=0;i<=5;i++){const v=lo*Math.pow(hi/lo,i/5),px=Math.round(Xv(v))+.5;x.textAlign=i===5?'right':i===0?'left':'center';x.fillText((v*A).toFixed(1)+'%',px,h-9);}
   const names=['PREDICT','WEIGHT','RESAMPLE'],cur=phase<.33?0:phase<.66?1:2;x.textAlign='left';let px0=L;
   const narrow=w<560;
-  names.forEach((nm,i)=>{let lab='0'+(i+1)+' '+nm;if(i===2&&!resampled)lab+=narrow?' ×':' (SKIPPED)';if(i===cur){x.fillStyle=C.accent;x.fillRect(px0,8,6,6);}x.fillStyle=i===cur?C.ink:'rgba(228,236,233,.35)';x.fillText(lab,px0+(narrow?10:12),11);px0+=x.measureText(lab).width+(narrow?22:36);});
+  names.forEach((nm,i)=>{let lab=(i+1)+' '+nm;if(i===2&&!resampled)lab+=narrow?' ×':' (SKIPPED)';if(i===cur){x.fillStyle=C.accent;x.fillRect(px0,8,6,6);}x.fillStyle=i===cur?C.ink:'rgba(228,236,233,.35)';x.fillText(lab,px0+(narrow?10:12),11);px0+=x.measureText(lab).width+(narrow?22:36);});
   const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,cl=v=>Math.max(0,Math.min(1,v));
   const a=ease(cl(phase/.33)),b=ease(cl((phase-.33)/.33)),c2=resampled?ease(cl((phase-.66)/.34)):0;
   if(cur>=1){   // observation line and the likelihood of today's return as a function of vol
@@ -505,7 +505,7 @@ function captionText(day){
   const weights=(shift>1.02?'high-vol particles gained weight':shift<.98?'low-vol particles gained weight':'weights barely shifted')+` (prediction ${pred.toFixed(1)}%)`;
   const est=b>a*1.005?`estimate rose ${a.toFixed(1)}% → ${b.toFixed(1)}%`:b<a*.995?`estimate fell ${a.toFixed(1)}% → ${b.toFixed(1)}%`:`estimate held at ${b.toFixed(1)}%`;
   const rs=f.resampled[day]?'resampled':`no resample (ESS ${Math.round(f.ess[day]*100)}%)`;
-  return `<b>${when}:</b> return was ${z.toFixed(1)}σ̂ → ${weights} → ${est}, ${rs}.`;
+  return `<b>${when}:</b> return was ${z.toFixed(1)}× the expected move → ${weights} → ${est}, ${rs}.`;
 }
 function render(){
   if(!D)return;const f=D.f,day=Math.min(S.day,D.T-1),n=NS[S.nIdx],real=isReal();
@@ -513,36 +513,35 @@ function render(){
   // mean abs error against the reference (true vol, or the realized vol of the next 5 days), from day 25
   const hi=day-(real?5:0);
   const mae=a=>{let q=0,k=0;for(let t=25;t<=hi;t++){if(!isFinite(a[t])||!isFinite(D.ref[t]))continue;q+=Math.abs(a[t]-D.ref[t]);k++;}return k?q/k:NaN;};
-  const mf=mae(D.est),rel=a=>{const r=Math.round((mf/mae(a)-1)*100);return isFinite(r)?(r>0?'+':'−')+Math.abs(r)+'%':'–';};
+  const mf=mae(D.est),rel=a=>{const r=Math.round((1-mf/mae(a))*100);return isFinite(r)?(r>0?'+':r<0?'−':'')+Math.abs(r)+'%':'–';};
   let rs=0;for(let t=0;t<=day;t++)rs+=f.resampled[t];
   const dv=(e-ep)*A,tr=(e-e5)/e5;
-  $('seedTag').textContent=real?'SPY · 2018–20':'SEED 0005';
   $('caption').innerHTML=captionText(day);
   $('dayLabel').textContent=dateLabel(day);$('nHead').textContent='N='+n.toLocaleString();
-  $('live').textContent=S.playing?'ON':'OFF';$('live').style.color=S.playing?C.accent:C.dim;
+  $('live').textContent=S.playing?'PLAYING':'PAUSED';$('live').style.color=S.playing?C.accent:C.dim;
   $('volAnn').textContent=(e*A).toFixed(1);$('volDelta').textContent=(dv>=0?'+':'−')+Math.abs(dv).toFixed(2);$('volDelta').style.color=dv>=0?C.shock:C.accent;
-  $('current').textContent='VOLATILITY '+(tr>.04?'RISING':tr<-.04?'FALLING':'STEADY');$('arrow').style.transform='rotate('+(tr>.04?-45:tr<-.04?45:0)+'deg)';
-  const rows=[['90% BAND LOW',pct(f.q[0][day])],['90% BAND HIGH',pct(f.q[4][day])],['ESS / N',Math.round(f.ess[day]*n).toLocaleString()+' / '+n.toLocaleString()],['RESAMPLES',String(rs)],
+  $('current').textContent='VOLATILITY '+(tr>.04?'RISING':tr<-.04?'FALLING':'STEADY');
+  const rows=[['90% BAND LOW',pct(f.q[0][day])],['90% BAND HIGH',pct(f.q[4][day])],['ESS / N',Math.round(f.ess[day]*100)+'%'],['RESAMPLES',String(rs)],
     ['RETURN r_t',(D.ret[day]*100).toFixed(2)+'%'],['MOVE |r_t|/σ̂',(Math.abs(D.ret[day])/ep).toFixed(2)],
-    ['ERR VS 20D STD',rel(D.roll)],['ERR VS EWMA',rel(D.ewma)],['ERR VS GARCH',rel(D.garch)],
+    ['ERR CUT VS 20D STD',rel(D.roll)],['ERR CUT VS EWMA',rel(D.ewma)],['ERR CUT VS GARCH',rel(D.garch)],
     [real?'REALIZED, NEXT 5D':'TRUE VOL',isFinite(D.ref[day])?pct(D.ref[day]):'–']];
   if(real)rows.push(['VIX',isFinite(D.vix[day])?pct(D.vix[day]):'–']);
-  $('rows').innerHTML=rows.map((r,i)=>`<div class="row"><span class="muted"><span class="k">${String(i+1).padStart(2,'0')}</span>${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
-  $('fcLabel').textContent=S.forecast?'DRIFT FAN · 20D →':'';$('dayN').textContent=day;$('drawn').textContent=Math.min(n,KSHOW)+' / '+n.toLocaleString()+' DRAWN';
+  $('rows').innerHTML=rows.map((r,i)=>`<div class="row"><span class="muted">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+  $('fcLabel').textContent=S.forecast?'FORECAST FAN · 20D →':'';$('dayN').textContent=day;$('drawn').textContent=Math.min(n,KSHOW)+' / '+n.toLocaleString()+' DRAWN';
   $('play').textContent=S.playing?'Pause':'Play';
   $('speedLab').textContent=S.speed.toFixed(1)+' d/s';$('phiLab').textContent=S.phi.toFixed(3);$('sigLab').textContent=S.sig.toFixed(2);$('nLab').textContent=n.toLocaleString();
   $('phiTLab').textContent=S.phiT.toFixed(3);$('sigTLab').textContent=S.sigT.toFixed(2);
   document.querySelectorAll('.preset').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===S.preset));
-  $('wave').disabled=real;$('phiT').disabled=$('sigT').disabled=real;
+  $('wave').disabled=real;$('truthGrp').hidden=real;$('phiT').disabled=$('sigT').disabled=real;
   const pi={predict:0,weight:1,resample:2}[S.phase];
   document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('on',i===pi));
   const chip=(k,label,col,dash)=>{const on=S.show[k];return`<button class="chip" data-k="${k}" aria-pressed="${on}"><span><span class="box">${on?'[×]':'[ ]'}</span>${label}</span><span class="sw" style="border-top:1.5px ${dash} ${col}"></span></button>`;};
-  const fixed=(label,col,dash)=>`<button class="chip" disabled style="opacity:1;cursor:default"><span><span class="box">[■]</span>${label}</span><span class="sw" style="border-top:1.5px ${dash} ${col}"></span></button>`;
+  const fixed=(label,col,dash)=>`<button class="chip" disabled style="opacity:1;cursor:default"><span><span class="box" style="visibility:hidden">[ ]</span>${label}</span><span class="sw" style="border-top:1.5px ${dash} ${col}"></span></button>`;
   $('chips').innerHTML=fixed('Filtered median',C.ink,'solid')+chip('truth',real?'Realized vol (next 5d)':'True vol',C.ink,'dashed')+chip('roll','20d rolling std',C.roll,'solid')+chip('ewma','EWMA (0.94)',C.ewma,'solid')+chip('garch','GARCH(1,1)',C.garch,'dashed')+(real?chip('vix','VIX (implied)',C.vix,'dotted'):'')+fixed(real?'Shock (>4σ̂)':'Shock day',C.shock,'dotted');
 }
 function setup(){
-  $('presets').innerHTML=[['calm','Calm','Flat sea'],['2008','2008','Long swell'],['2020','2020','Squall'],[REAL_PRESET,'Real: SPY 2020','Actual market']].map(([k,l,s])=>`<button class="preset" data-k="${k}" aria-pressed="false"><span>${l}</span><small>${s}</small></button>`).join('');
-  $('steps').innerHTML=STEPS.map(([t,b],i)=>`<div class="step"><span class="n">0${i+1}</span><div><span class="t">${t.toUpperCase()}</span><p>${b}</p></div></div>`).join('');
+  $('presets').innerHTML=[['calm','Calm','No shocks'],['2008','Two jumps','Moderate'],['2020','One jump','Large'],[REAL_PRESET,'Real: SPY 2020','Actual market']].map(([k,l,s])=>`<button class="preset" data-k="${k}" aria-pressed="false"><span>${l}</span><small>${s}</small></button>`).join('');
+  $('steps').innerHTML=STEPS.map(([t,b],i)=>`<div class="step"><span class="n">${i+1}</span><div><span class="t">${t.toUpperCase()}</span><p>${b}</p></div></div>`).join('');
   $('presets').addEventListener('click',e=>{const b=e.target.closest('.preset');if(!b)return;setPreset(b.dataset.k);});
   $('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b||b.disabled)return;S.show[b.dataset.k]=!S.show[b.dataset.k];redraw();render();});
   $('play').onclick=togglePlay;$('step').onclick=step;$('reset').onclick=()=>{dayF=70;S.day=70;redraw();render();};
@@ -583,6 +582,7 @@ function init(){
   setup();buildData();render();redraw();   // drawn but paused until Enter
   $('enter').onclick=enter;$('enter').focus({preventScroll:true});
   new ResizeObserver(redraw).observe($('stack'));
+  new ResizeObserver(redraw).observe(document.querySelector('main.chart'));
   if(document.fonts)document.fonts.ready.then(redraw);
   let last=performance.now();const loop=now=>{const dt=Math.min(.1,(now-last)/1000);last=now;frame(dt);requestAnimationFrame(loop);};
   requestAnimationFrame(loop);
