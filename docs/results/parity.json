@@ -1,0 +1,56 @@
+{
+  "description": "Browser (JS) filter vs Python filter on the same simulated returns (tests/data/parity.json). Reference: Python, N=100000. JS: 6 seeds per N. Error is relative to the reference filtered mean.",
+  "by_variant": {
+    "plain": {
+      "python_loglik": 790.94,
+      "results": [
+        {
+          "N": 1000,
+          "rms_rel_error": 0.0094,
+          "worst_day": 0.034,
+          "js_loglik": 790.85
+        },
+        {
+          "N": 5000,
+          "rms_rel_error": 0.0041,
+          "worst_day": 0.014,
+          "js_loglik": 790.9
+        }
+      ]
+    },
+    "jump": {
+      "python_loglik": 790.59,
+      "results": [
+        {
+          "N": 1000,
+          "rms_rel_error": 0.0108,
+          "worst_day": 0.049,
+          "js_loglik": 790.6
+        },
+        {
+          "N": 5000,
+          "rms_rel_error": 0.0046,
+          "worst_day": 0.024,
+          "js_loglik": 790.53
+        }
+      ]
+    },
+    "student_t": {
+      "python_loglik": 791.59,
+      "results": [
+        {
+          "N": 1000,
+          "rms_rel_error": 0.009,
+          "worst_day": 0.03,
+          "js_loglik": 791.58
+        },
+        {
+          "N": 5000,
+          "rms_rel_error": 0.0038,
+          "worst_day": 0.014,
+          "js_loglik": 791.59
+        }
+      ]
+    }
+  }
+}

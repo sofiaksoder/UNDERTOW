@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undertow · particle filter for stochastic volatility</title>
+<meta name="description" content="A bootstrap particle filter estimating hidden volatility from returns, running live in your browser.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preload" as="image" href="assets/undertow-hero.webp" type="image/webp">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@200;300;400&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+:root{--ink:#e4ece9;--ink2:#c4d2ce;--muted:#7f9590;--faint:#3d5560;--rule:#1c2a33;--ctl:#2f4450;--accent:#9ed0c4;--coral:#e8735a;--body:#8fa39e;}
+*{box-sizing:border-box;}
+html,body{margin:0;background:#04070b;}
+a{color:var(--ink);} a:hover{color:var(--accent);}
+:focus-visible{outline:1px solid var(--accent);outline-offset:2px;}
+input[type=range]{accent-color:var(--accent);margin:0;width:100%;}
+button{font:400 11px 'Geist Mono',ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:transparent;border:1px solid var(--ctl);border-radius:0;cursor:pointer;}
+button:disabled{cursor:not-allowed;opacity:.3;}
+.page{position:relative;min-height:100vh;background:linear-gradient(180deg,#04070b 0%,#050b12 55%,#0a2036 100%);color:var(--ink);font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;}
+.dots{position:absolute;inset:0;background-image:radial-gradient(rgba(158,208,196,.10) 1px,transparent 1.4px);background-size:24px 24px;pointer-events:none;}
+.wrap{position:relative;padding:14px clamp(12px,2vw,28px) 40px;display:flex;flex-direction:column;}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding:8px 0 12px;border-bottom:1px solid var(--rule);}
+.brand{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+h1{margin:0;font:300 26px 'Geist',sans-serif;letter-spacing:.32em;}
+.muted{color:var(--muted);}
+.guide{font:400 11px 'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--accent);border:1px solid var(--ctl);padding:5px 10px;}
+.guide:hover{background:var(--accent);color:#04070b;border-color:var(--accent);}
+.preset[aria-pressed=true]{background:var(--ink);color:#04070b;}
+.meta{display:flex;gap:18px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap;}
+.tag{border:1px solid var(--ctl);padding:1px 6px;color:var(--ink2);}
+section.band{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--rule);}
+section.band:last-child{border-bottom:0;}
+.chart{flex:1 1 620px;min-width:0;padding:12px 16px 8px 0;display:flex;flex-direction:column;gap:4px;}
+.side{flex:1 1 280px;max-width:100%;min-width:0;border-left:1px solid var(--rule);padding:12px 0 12px 16px;display:flex;flex-direction:column;gap:18px;}
+.cap{display:flex;justify-content:space-between;gap:12px;color:var(--muted);flex-wrap:wrap;}
+.cap b{color:var(--ink);font-weight:400;}
+.cap+.cv{margin-bottom:0;} .gap8{margin-top:8px;}
+.cv{position:relative;}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;}
+.num{font:200 76px/1.15 'Geist',sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums;}
+.row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dotted var(--rule);font-variant-numeric:tabular-nums;}
+.row .k{color:var(--faint);margin-right:8px;} .row .v{text-transform:none;}
+.grp{display:flex;flex-direction:column;gap:8px;}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+.three button{padding:9px 6px;}
+#play{background:var(--ink);color:#04070b;border-color:var(--ink);font-weight:500;}
+.lab{display:flex;justify-content:space-between;color:var(--ink2);font-variant-numeric:tabular-nums;}
+.preset{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;color:var(--ink2);}
+.preset small{font-size:9.5px;color:var(--muted);}
+.preset[aria-pressed=true] small{color:#3d5560;}
+.presets{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}
+#wave{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-color:var(--coral);}
+#wave i{font-style:normal;color:var(--coral);text-transform:none;}
+.chk{display:flex;align-items:center;gap:8px;color:var(--ink2);cursor:pointer;}
+.chk input{accent-color:var(--accent);width:14px;height:14px;margin:0;}
+.chip{display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px dotted var(--rule);padding:5px 0;text-align:left;width:100%;}
+.chip .box{color:var(--muted);margin-right:10px;} .chip .sw{width:28px;height:0;flex:none;}
+.step{display:grid;grid-template-columns:28px 1fr;gap:6px;}
+.step .n{color:var(--faint);font-variant-numeric:tabular-nums;} .step .t{color:var(--ink2);}
+.step.on .n{color:var(--accent);} .step.on .t{color:var(--ink);}
+.step p{margin:3px 0 0;color:var(--body);text-transform:none;letter-spacing:.01em;font-size:11.5px;line-height:1.55;text-wrap:pretty;}
+.sub{font-family:'Geist Mono',monospace;text-transform:none;}
+@media (max-width:700px){.side{border-left:0;padding-left:0;border-top:1px solid var(--rule);} .num{font-size:60px;}}
+
+/* opening screen */
+.intro{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1a20;color:#eef3f1;font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;transition:opacity 1100ms cubic-bezier(.4,0,.2,1),visibility 1100ms;}
+.intro.gone{opacity:0;visibility:hidden;pointer-events:none;}
+.intro .photo{position:absolute;inset:-2%;background:url('assets/undertow-hero.webp') 62% 50%/cover no-repeat;transform:scale(1);transition:transform 1600ms cubic-bezier(.4,0,.2,1);}
+.intro.gone .photo{transform:scale(1.08);}
+.intro .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,7,11,0) 0%,rgba(4,7,11,0) 45%,rgba(4,7,11,.55) 78%,rgba(4,7,11,.85) 100%);}
+.intro .in{position:relative;height:100%;padding:clamp(18px,3vw,40px) clamp(20px,4vw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:24px;overflow:auto;}
+.intro .top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;color:#13242c;}
+.intro .bot{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;flex-wrap:wrap;}
+.intro .stack{display:flex;flex-direction:column;gap:20px;max-width:760px;}
+.intro h1{margin:0;font:200 clamp(52px,10vw,148px)/.9 'Geist',sans-serif;letter-spacing:.14em;color:#eef3f1;}
+.intro .sub{margin:0;font:300 clamp(16px,1.6vw,20px)/1.45 'Geist',sans-serif;letter-spacing:0;text-transform:none;color:#d3dedb;max-width:440px;text-wrap:pretty;}
+.intro .cta{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.intro .enter{display:flex;align-items:center;gap:14px;font:400 12px 'Geist Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#eef3f1;background:rgba(4,7,11,.25);border:1px solid #eef3f1;padding:14px 22px;cursor:pointer;transition:background 200ms,color 200ms;}
+.intro .enter:hover{background:#eef3f1;color:#04070b;}
+.intro .hint{color:#9fb3ae;letter-spacing:.08em;}
+.intro .facts{display:flex;flex-direction:column;gap:4px;align-items:flex-end;color:#9fb3ae;font-variant-numeric:tabular-nums;text-align:right;}
+@media (max-width:640px){.intro .facts{align-items:flex-start;text-align:left;}}
+.caption{margin:10px 0 0;padding:8px 12px;border:1px solid var(--rule);border-left:2px solid var(--accent);background:rgba(10,32,54,.35);color:var(--ink2);font:400 12px/1.55 'Geist Mono',monospace;letter-spacing:.02em;text-transform:none;min-height:3.4em;}
+.caption b{color:var(--ink);font-weight:500;}
+.note{margin:0;color:var(--muted);text-transform:none;letter-spacing:.01em;font-size:11px;line-height:1.5;}
+@media (prefers-reduced-motion:reduce){.intro,.intro .photo,.intro .enter{transition:none;}}
+</style>
+</head>
+<body>
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Undertow, opening screen">
+  <div class="photo" aria-hidden="true"></div>
+  <div class="scrim" aria-hidden="true"></div>
+  <div class="in">
+    <div class="top"><span style="font-weight:500;letter-spacing:.18em">UNDERTOW</span><span style="letter-spacing:.08em">PARTICLE FILTER · STOCHASTIC VOLATILITY</span></div>
+    <div class="bot">
+      <div class="stack">
+        <h1>UNDERTOW</h1>
+        <p class="sub">
+        <span>Volatility can't be observed directly.</span>
+        <span>Watch a particle filter infer it from nothing but price moves.</span>
+        </p>
+        <div class="cta"><button class="enter" id="enter">Enter <span aria-hidden="true">→</span></button><span class="hint">OR PRESS ENTER</span></div>
+      </div>
+      <div class="facts"><span>SV MODEL · BOOTSTRAP PF</span><span>SIMULATED OR REAL (SPY) DATA</span></div>
+    </div>
+  </div>
+</div>
+<div class="page" id="page" inert>
+<div class="dots" aria-hidden="true"></div>
+<div class="wrap">
+
+<header>
+  <div class="brand"><h1>UNDERTOW</h1><span class="muted">Subsurface market volatility</span></div>
+  <a class="guide" href="guide.html">Guide →</a>
+  <div class="meta"><span class="tag" id="seedTag">SEED 0005</span><span id="dayLabel"></span><span id="nHead"></span><span>LIVE <span id="live"></span></span></div>
+</header>
+<div class="caption" id="caption" aria-live="off"></div>
+
+<section class="band">
+  <div class="chart" id="stack">
+    <div class="cap"><span><b>00</b> · Posterior density (sea state) <span class="sub">p(σ_t | r_1:t)</span> · last 64 days</span><span>DEPTH = TIME · HEIGHT = DENSITY</span></div>
+    <div class="cv" style="height:clamp(300px,40vw,460px)"><canvas id="surf" role="img" aria-label="Posterior density surface over the last 64 days"></canvas></div>
+  </div>
+  <aside class="side" style="gap:14px">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span class="muted">FILTERED VOL · % ANN.</span>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="num" id="volAnn"></span><span class="tag" id="volDelta" style="color:var(--ink)"></span></div>
+      <span style="color:var(--accent);display:flex;gap:8px;align-items:center"><span id="arrow" style="display:inline-block">→</span><span id="current"></span></span>
+    </div>
+    <div id="rows"></div>
+  </aside>
+</section>
+
+<section class="band">
+  <main class="chart">
+    <div class="cap"><span><b>01</b> · Price and returns (surface) · <span class="sub">±2σ</span> envelope</span><span id="fcLabel"></span></div>
+    <div class="cv" style="height:220px"><canvas id="price" role="img" aria-label="Price chart with volatility envelope and return bars"></canvas></div>
+    <div class="cap gap8"><span><b>02</b> · Volatility estimate (undercurrent) · % ann.</span><span>MEDIAN · 50 · 90</span></div>
+    <div class="cv" style="height:240px"><canvas id="fan" role="img" aria-label="Posterior volatility fan"></canvas></div>
+    <div class="cap gap8"><span><b>03</b> · Particle health (soundings) · ESS / N</span><span>RESAMPLE &lt; 0.50</span></div>
+    <div class="cv" style="height:96px"><canvas id="ess" role="img" aria-label="Effective sample size over time"></canvas></div>
+  </main>
+  <aside class="side">
+    <div class="grp">
+      <span class="muted">PLAYBACK</span>
+      <div class="three"><button id="play">Play</button><button id="step">Step →</button><button id="reset" title="Back to day 70: the first 70 days are the filter's warm-up">Reset</button></div>
+      <label><span class="lab"><span>DRIFT SPEED</span><span id="speedLab" style="text-transform:none"></span></span><input id="speed" type="range" min="0.5" max="12" step="0.5" value="3"></label>
+      <p class="note">Time starts at day 70 and loops back there. The first 70 days are warm-up: the filter begins from a vague prior and needs time to settle, and the sea-state surface needs 64 days of history.</p>
+    </div>
+    <div class="grp">
+      <span class="muted">CONDITIONS</span>
+      <div class="presets" role="group" aria-label="Regime preset" id="presets"></div>
+      <button id="wave"><span>Add a shock (rogue wave)</span><i>+1.5 h_t</i></button>
+      <label class="chk"><input id="fc" type="checkbox" checked> 20-DAY DRIFT FORECAST · MONTE CARLO</label>
+    </div>
+    <div class="grp" style="gap:6px"><span class="muted">OVERLAYS</span><div id="chips"></div></div>
+    <div class="grp" style="gap:10px">
+      <span class="muted" title="What the filter believes about the market. It is free to be wrong.">FILTER ASSUMES</span>
+      <label><span class="lab"><span><span class="sub">φ</span> PERSISTENCE</span><span id="phiLab"></span></span><input id="phi" type="range" min="0.80" max="0.995" step="0.005" value="0.97"></label>
+      <label><span class="lab"><span><span class="sub">σ_η</span> VOL OF VOL</span><span id="sigLab"></span></span><input id="sig" type="range" min="0.05" max="0.40" step="0.01" value="0.15"></label>
+      <label><span class="lab"><span>PARTICLES N</span><span id="nLab"></span></span><input id="nIdx" type="range" min="0" max="5" step="1" value="3"></label>
+      <label class="chk"><input id="jump" type="checkbox"> JUMP COMPONENT (SHOCK-ROBUST)</label>
+      <label class="chk"><input id="tnoise" type="checkbox"> STUDENT-T NOISE (FAT TAILS)</label>
+    </div>
+    <div class="grp" style="gap:10px">
+      <span class="muted" title="How the simulated market really behaves. Not available for real data.">DATA · SIMULATED TRUTH</span>
+      <label><span class="lab"><span><span class="sub">φ</span> TRUE PERSISTENCE</span><span id="phiTLab"></span></span><input id="phiT" type="range" min="0.80" max="0.995" step="0.005" value="0.97"></label>
+      <label><span class="lab"><span><span class="sub">σ_η</span> TRUE VOL OF VOL</span><span id="sigTLab"></span></span><input id="sigT" type="range" min="0.05" max="0.40" step="0.01" value="0.15"></label>
+    </div>
+  </aside>
+</section>
+
+<section class="band">
+  <div class="chart" style="padding-bottom:0">
+    <div class="cap"><span><b>04</b> · Particle cloud (shoal) · day <span id="dayN"></span></span><span id="drawn"></span></div>
+    <div class="cv" style="height:170px"><canvas id="strip" role="img" aria-label="Live particle strip showing predict, weight, resample"></canvas></div>
+  </div>
+  <div class="side" style="padding-bottom:0;gap:12px">
+    <span class="muted">HOW IT WORKS</span>
+    <div id="steps"></div>
+  </div>
+</section>
+
+</div></div>
+
+<script>
+"use strict";
+/* ---------- constants ---------- */
+const C={ink:'#e4ece9',inkA:'228,236,233',deepA:'70,130,170',dim:'#7f9590',grid:'rgba(158,208,196,0.18)',roll:'#8fb8d6',ewma:'#b49fd6',garch:'#d9c9a6',vix:'#d98cb3',shock:'#e8735a',accent:'#9ed0c4'};
+const FONT='10px "Geist Mono",monospace';
+const A=Math.sqrt(252)*100;              // daily vol -> % annualized
+const H=20, ROWS=64, NS=[100,250,500,1000,2500,5000], KSHOW=280;
+const MU=-9.2, PHI0=0.97, SIG0=0.15, T_SIM=300, SIM_SEED=5;
+const PRESETS={calm:[],'2008':[{t:100,size:.7},{t:165,size:1.1}],'2020':[{t:160,size:2.1}]};
+const SHOCK_RULE=4;                      // real data: a return beyond 4 sigma-hat is drawn as a shock
+const JUMP={prob:0.003,mean:1.5,std:0.5}, DOF=20;                  // fitted on SPY 2010-2018 (docs/results/fit.json)
+const GARCH_SIM={omega:3.3266e-6,alpha:0.0817,beta:0.896};         // GARCH(1,1) fitted offline on simulated paths
+const EWMA_LAMBDA=0.94, REAL_PRESET='spy2020', REAL_START='2020-02-14';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const G=480, GLO=Math.log(2/A), GHI=Math.log(250/A), GW=(GHI-GLO)/G;   // log-vol grid for posterior densities
+
+/* ---------- random numbers ---------- */
+function rng(seed){let s=seed|0;return()=>{s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function normal(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307179586*r());}
+
+/* ---------- model: simulate returns ---------- */
+// Same model as pfvol/model.py. A shock is added to h on its day and decays with persistence phi.
+function simulate(seed,shocks,n,phi=PHI0,sig=SIG0){
+  const r=rng(seed),sd=sig/Math.sqrt(1-phi*phi);
+  const h=new Float64Array(n);h[0]=MU+sd*normal(r);
+  for(let t=1;t<n;t++)h[t]=MU+phi*(h[t-1]-MU)+sig*normal(r);
+  const extra=new Float64Array(n);for(const s of shocks)if(s.t<n)extra[s.t]+=s.size;
+  let carry=0;for(let t=0;t<n;t++){carry=phi*carry+extra[t];h[t]+=carry;}
+  const ret=new Float64Array(n),truth=new Float64Array(n),price=new Float64Array(n);let p=100;
+  for(let t=0;t<n;t++){truth[t]=Math.exp(h[t]/2);ret[t]=truth[t]*normal(r);p*=Math.exp(ret[t]);price[t]=p;}
+  return{ret,truth,price,shockDays:shocks.map(s=>s.t)};
+}
+function rollingStd(ret,w){const o=new Float64Array(ret.length).fill(NaN);let s=0;for(let t=0;t<ret.length;t++){s+=ret[t]*ret[t];if(t>=w)s-=ret[t-w]*ret[t-w];if(t>=w-1)o[t]=Math.sqrt(s/w);}return o;}
+
+// Baselines. EWMA matches pfvol.benchmarks.ewma_vol; garchNext matches garch_next_vol
+// (element t is the one-day-ahead vol known after seeing r_t).
+function ewmaVol(ret,lam=EWMA_LAMBDA,warm=20){
+  const o=new Float64Array(ret.length),m=Math.min(warm,ret.length);let v=0;
+  for(let t=0;t<m;t++)v+=ret[t]*ret[t];v/=m;
+  for(let t=0;t<ret.length;t++){v=lam*v+(1-lam)*ret[t]*ret[t];o[t]=Math.sqrt(v);}
+  return o;
+}
+function garchNext(ret,{omega,alpha,beta}){
+  const o=new Float64Array(ret.length),pers=alpha+beta;let v=pers<1?omega/(1-pers):1e-4;
+  for(let t=0;t<ret.length;t++){v=omega+alpha*ret[t]*ret[t]+beta*v;o[t]=Math.sqrt(v);}
+  return o;
+}
+// log-gamma (Lanczos), used for the Student-t density
+function lgamma(z){
+  const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);
+  z-=1;let x=c[0];for(let i=1;i<9;i++)x+=c[i]/(z+i);const t=z+7.5;
+  return .5*Math.log(2*Math.PI)+(z+.5)*Math.log(t)-t+Math.log(x);
+}
+
+/* ---------- the filter (port of pfvol/filter.py) ---------- */
+// Bootstrap particle filter. Log-space weights, systematic resampling when ESS < N/2.
+// Besides the summary series it keeps, for each day, a posterior density on a log-vol grid and
+// a snapshot of up to KSHOW particles (before/after predict, weights, resample parents) for the strip.
+function runFilter(ret,{mu,phi,sig,N,seed,jump=null,dof=null}){
+  const r=rng(seed),T=ret.length,K=Math.min(N,KSHOW),stride=Math.floor(N/K);
+  const sd=sig/Math.sqrt(1-phi*phi);
+  let h=new Float64Array(N),h2=new Float64Array(N);
+  for(let i=0;i<N;i++)h[i]=mu+sd*normal(r);
+  const logw=new Float64Array(N).fill(-Math.log(N)),w=new Float64Array(N),cdf=new Float64Array(N);
+  let y=new Float32Array(N),y2=new Float32Array(N);for(let i=0;i<N;i++)y[i]=.12+.76*r();
+  const out={T,N,K,est:new Float64Array(T),q:[0,1,2,3,4].map(()=>new Float64Array(T)),lu:new Float64Array(T),
+    ess:new Float64Array(T),resampled:new Uint8Array(T),predVar:new Float64Array(T),priorMean:new Float64Array(T),logliks:new Float64Array(T),loglik:0,
+    dens:new Float32Array(T*G),
+    prev:new Float32Array(T*K),pred:new Float32Array(T*K),wn:new Float32Array(T*K),par:new Float32Array(T*K),
+    py:new Float32Array(T*K),py2:new Float32Array(T*K)};
+  const QS=[.05,.25,.5,.75,.95],hist=new Float64Array(G),sm=new Float64Array(G);
+  const KER=[...Array(13)].map((_,i)=>Math.exp(-((i-6)**2)/(2*2*2)));const ks=KER.reduce((a,b)=>a+b,0);
+  const vol=new Float64Array(N);
+  const tc=dof?lgamma((dof+1)/2)-lgamma(dof/2)-.5*Math.log(Math.PI*(dof-2)):0;                    // Student-t normaliser
+  const jf=jump?(1-jump.prob)+jump.prob*Math.exp(jump.mean+.5*jump.std*jump.std):1;             // E[exp(J)] for the jump
+  for(let t=0;t<T;t++){
+    for(let k=0;k<K;k++)out.prev[t*K+k]=Math.exp(h[k*stride]/2);
+    if(t>0){
+      for(let i=0;i<N;i++)h[i]=mu+phi*(h[i]-mu)+sig*normal(r);
+      if(jump)for(let i=0;i<N;i++)if(r()<jump.prob)h[i]+=jump.mean+jump.std*normal(r);
+    }
+    {let pm=0;for(let i=0;i<N;i++)pm+=Math.exp(logw[i]+h[i]/2);out.priorMean[t]=pm;}   // mean vol before seeing today's return
+    const x=ret[t],x2=x*x;let m=-Infinity;
+    for(let i=0;i<N;i++){logw[i]+=dof?tc-.5*h[i]-.5*(dof+1)*Math.log1p(x2*Math.exp(-h[i])/(dof-2)):-.5*(h[i]+x2*Math.exp(-h[i])+1.8378770664093453);if(logw[i]>m)m=logw[i];}
+    let s=0;for(let i=0;i<N;i++){w[i]=Math.exp(logw[i]-m);s+=w[i];}
+    out.logliks[t]=m+Math.log(s);out.loglik+=out.logliks[t];   // previous weights sum to 1
+    let sq=0;for(let i=0;i<N;i++){w[i]/=s;logw[i]=Math.log(w[i]);sq+=w[i]*w[i];}
+    out.ess[t]=1/sq/N;
+    // summaries
+    hist.fill(0);let mean=0,lm=0,lq=0,pv=0;
+    for(let i=0;i<N;i++){const v=Math.exp(h[i]/2);vol[i]=v;mean+=w[i]*v;const lv=h[i]/2;lm+=w[i]*lv;lq+=w[i]*lv*lv;
+      pv+=w[i]*Math.exp(mu+phi*(h[i]-mu)+.5*sig*sig);
+      const b=Math.floor((lv-GLO)/GW);if(b>=0&&b<G)hist[b]+=w[i];}
+    out.est[t]=mean;out.lu[t]=Math.sqrt(Math.max(lq-lm*lm,1e-12));out.predVar[t]=pv*jf;
+    // quantiles from the histogram (linear inside a bin)
+    let c=0,qi=0;for(let b=0;b<G&&qi<5;b++){const nc=c+hist[b];while(qi<5&&nc>=QS[qi]&&hist[b]>0){out.q[qi][t]=Math.exp(GLO+(b+(QS[qi]-c)/hist[b])*GW);qi++;}c=nc;}
+    while(qi<5){out.q[qi][t]=Math.exp(GHI);qi++;}
+    // smoothed density (per unit log-vol), used by the surface
+    for(let b=0;b<G;b++){let a=0;for(let j=-6;j<=6;j++){const bb=b+j;if(bb>=0&&bb<G)a+=hist[bb]*KER[j+6];}sm[b]=a/ks/GW;}
+    for(let b=0;b<G;b++)out.dens[t*G+b]=sm[b];
+    // strip snapshot: predicted position and weight
+    let wmax=0;for(let k=0;k<K;k++)wmax=Math.max(wmax,w[k*stride]);
+    for(let k=0;k<K;k++){out.pred[t*K+k]=vol[k*stride];out.wn[t*K+k]=w[k*stride]/wmax;out.py[t*K+k]=y[k*stride];}
+    // resample
+    if(out.ess[t]<.5){
+      out.resampled[t]=1;
+      let cum=0;for(let i=0;i<N;i++){cum+=w[i];cdf[i]=cum;}cdf[N-1]=1;
+      const u0=r();let j=0;
+      for(let i=0;i<N;i++){const pos=(u0+i)/N;while(j<N-1&&cdf[j]<pos)j++;h2[i]=h[j];y2[i]=Math.min(.92,Math.max(.08,y[j]+(r()-.5)*.14));if(i%stride===0&&i/stride<K){const k=i/stride;out.par[t*K+k]=vol[j];out.py2[t*K+k]=y2[i];}}
+      [h,h2]=[h2,h];[y,y2]=[y2,y];logw.fill(-Math.log(N));
+    }else for(let k=0;k<K;k++){out.par[t*K+k]=out.pred[t*K+k];out.py2[t*K+k]=out.py[t*K+k];}
+  }
+  return out;
+}
+
+/* ---------- app state ---------- */
+const $=id=>document.getElementById(id);
+const S={entered:false,playing:false,day:236,speed:3,phi:PHI0,sig:SIG0,phiT:PHI0,sigT:SIG0,nIdx:3,preset:'2020',extra:[],
+  show:{truth:true,roll:false,ewma:true,garch:true,vix:true},forecast:true,jump:false,tnoise:false,phase:'weight'};
+const saved={sim:{phi:PHI0,sig:SIG0},real:null};   // each data source keeps its own filter settings
+let D=null,REAL=null,dayF=236.6,drawnDay=-1,stepT=null,reduced=false;
+const isReal=()=>S.preset===REAL_PRESET;
+
+function buildData(){
+  let ret,price,ref,dates=null,vix=null,mu,garchP,simShocks=[];
+  if(!isReal()){
+    simShocks=[...PRESETS[S.preset],...S.extra];
+    const sim=simulate(SIM_SEED,simShocks,T_SIM,S.phiT,S.sigT);
+    ret=sim.ret;price=sim.price;ref=sim.truth;mu=MU;garchP=GARCH_SIM;
+  }else{
+    ret=Float64Array.from(REAL.ret);price=Float64Array.from(REAL.close);dates=REAL.dates;
+    ref=Float64Array.from(REAL.rv5,v=>v==null?NaN:v);                  // realized vol of the next 5 days (hindsight)
+    vix=Float64Array.from(REAL.vix,v=>v==null?NaN:v/A);               // VIX is annualized %, convert to daily vol
+    mu=REAL.params.mu;garchP=REAL.garch;
+  }
+  const f=runFilter(ret,{mu,phi:S.phi,sig:S.sig,N:NS[S.nIdx],seed:1,jump:S.jump?JUMP:null,dof:S.tnoise?DOF:null});
+  const d={f,ret,price,ref,dates,vix,roll:rollingStd(ret,20),ewma:ewmaVol(ret),garch:garchNext(ret,garchP),T:f.T,est:f.est};
+  d.shocks=simShocks.map(s=>s.t);
+  if(isReal())for(let t=1;t<d.T;t++)if(Math.abs(ret[t])/d.est[t-1]>SHOCK_RULE)d.shocks.push(t);
+  let vm=0;for(const a of [f.q[4],ref,d.garch,d.ewma,vix])if(a)for(let t=0;t<d.T;t++)if(isFinite(a[t]))vm=Math.max(vm,a[t]);
+  d.vmax=vm*A*1.05;d.pmin=Math.min(...d.price)*.86;d.pmax=Math.max(...d.price)*1.1;
+  d.rmax=Math.max(...Array.from(d.ret,Math.abs));
+  D=d;
+}
+function rebuild(){buildData();S.day=Math.min(S.day,D.T-1);dayF=Math.min(dayF,D.T-.01);pc=-1;redraw();render();}
+
+async function setPreset(k){
+  if(k===REAL_PRESET&&!REAL){
+    try{const r=await fetch('data/spy.json');if(!r.ok)throw new Error(r.status);REAL=await r.json();saved.real={phi:REAL.params.phi,sig:REAL.params.sigma_eta};}
+    catch(err){$('caption').textContent='Could not load data/spy.json ('+err.message+'). Serve this folder over http (python3 -m http.server) instead of opening the file directly.';return;}
+  }
+  const wasReal=isReal(),toReal=k===REAL_PRESET;
+  if(wasReal!==toReal){
+    saved[wasReal?'real':'sim']={phi:S.phi,sig:S.sig};
+    Object.assign(S,saved[toReal?'real':'sim']);
+    $('phi').value=S.phi;$('sig').value=S.sig;
+  }
+  S.preset=k;S.extra=[];
+  if(toReal){S.day=Math.max(70,REAL.dates.indexOf(REAL_START));}else S.day=236;
+  dayF=S.day+.6;rebuild();
+}
+
+/* ---------- canvas helpers ---------- */
+const X=(t,w)=>44+(t/(D.T-1+H))*(w-44-6);
+function fit(c){const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);return[x,w,h];}
+function cross(x,px,py,s){x.beginPath();x.moveTo(px-s,py);x.lineTo(px+s,py);x.moveTo(px,py-s);x.lineTo(px,py+s);x.stroke();}
+function yAxis(x,w,top,bot,lo,hi,fmt,n){
+  x.strokeStyle=C.grid;x.fillStyle=C.grid;x.lineWidth=1;
+  for(let i=0;i<=n;i++){const y=Math.round(bot-(bot-top)*i/n)+.5;
+    for(let t=0;t<D.T+H;t+=25)x.fillRect(Math.round(X(t,w)),y,1,1);
+    for(let t=0;t<D.T+H;t+=50)cross(x,Math.round(X(t,w))+.5,y,3);}
+  x.font=FONT;x.fillStyle=C.dim;x.textAlign='right';x.textBaseline='middle';
+  for(let i=0;i<=n;i++){const v=lo+(hi-lo)*i/n,y=Math.round(bot-(bot-top)*i/n)+.5;x.fillText(fmt(v),36,y);}
+}
+function marks(x,w,top,bot,day){
+  x.fillStyle=C.shock;
+  for(const t of D.shocks)if(t<=day){const px=Math.round(X(t,w));for(let y=top;y<bot;y+=4)x.fillRect(px,y,1,1.5);}
+  const cx=Math.round(X(day,w));x.fillStyle=C.accent;for(let y=top;y<bot;y+=3)x.fillRect(cx,y,1,1.5);
+}
+function dline(x,w,arr,day,Y,gap,from=0){x.beginPath();for(let t=from;t<=day;t+=gap)if(isFinite(arr[t]))x.rect(X(t,w),Y(arr[t]),1.3,1.3);x.fill();}
+function path(x,w,arr,day,Y,from=0){x.beginPath();let pen=false;for(let t=from;t<=day;t++){if(!isFinite(arr[t])){pen=false;continue;}const px=X(t,w),py=Y(arr[t]);pen?x.lineTo(px,py):x.moveTo(px,py);pen=true;}x.stroke();}
+function dateLabel(t,short){
+  if(!isReal())return short?'t='+t:'T '+String(t).padStart(3,'0');
+  let s;
+  if(t<D.T)s=D.dates[t];
+  else{const d=new Date(D.dates[D.T-1]+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+Math.round((t-D.T+1)*1.4));s=d.toISOString().slice(0,10);}
+  return short?MON[+s.slice(5,7)-1]+" '"+s.slice(2,4):s;
+}
+
+/* ---------- drawing ---------- */
+function drawSurface(day){
+  const c=$('surf'),[x,w,h]=fit(c),d=D,f=d.f;
+  const llo=Math.log(3/A),lhi=Math.log(d.vmax*.9/A),cx=w/2+24,Sn=Math.max(120,Math.floor(w/4));
+  x.font=FONT;x.textBaseline='middle';
+  for(let k=0;k<ROWS;k++){const t=day-ROWS+1+k;if(t<0)continue;
+    const fr=k/(ROWS-1),sc=.5+.5*fr,W=(w-100)*sc,baseY=h*.18+fr*h*.7,amp=h*.6*(.55+.45*fr);
+    const r=rng(t*977+13),front=k===ROWS-1;
+    const al=.12+.6*fr*fr,col=fr<.5?C.deepA:C.inkA,colA=front?.95:al;
+    x.globalCompositeOperation='lighter';
+    for(let j=0;j<=Sn;j++){const xn=j/Sn,lv=llo+xn*(lhi-llo),gi=(lv-GLO)/GW-.5;
+      let dn=0;if(gi>=0&&gi<G-1){const b=Math.floor(gi),fq=gi-b;dn=f.dens[t*G+b]*(1-fq)+f.dens[t*G+b+1]*fq;}
+      dn=Math.min(1.7,.75*dn);                       // narrow posteriors spike, capped
+      const cap=(baseY-8)/amp;dn=cap*Math.tanh(dn/cap); // soft limit: ridges bend to stay on the canvas
+      const px=cx+(xn-.5)*W+(r()-.5)*1.5,py=baseY-dn*amp+(r()-.5)*1.5;
+      x.fillStyle=`rgba(${col},${colA})`;x.fillRect(px,py,1.2,1.2);
+      const m=Math.floor(dn*amp/7*(.4+fr*.6));x.fillStyle=`rgba(${col},${al*.35})`;
+      for(let q=0;q<m;q++)x.fillRect(px+(r()-.5)*2,py+r()*(baseY-py),1,1);
+      if(j%3===0){x.fillStyle=`rgba(${C.deepA},${al*.4})`;x.fillRect(px,baseY,1,1);}
+    }
+    x.globalCompositeOperation='source-over';
+    if(d.shocks.includes(t)){x.fillStyle=C.shock;x.fillRect(cx-W/2-14,baseY,8,1.5);}
+    if(k%16===15||front){x.fillStyle=front?C.ink:C.dim;x.textAlign='right';x.fillText(dateLabel(t,true).toUpperCase(),cx-W/2-20,baseY);}
+  }
+  const W=w-100,baseY=h*.88;x.fillStyle=C.dim;x.textAlign='center';
+  for(const p of [5,10,20,40,80]){if(Math.log(p/A)>lhi)continue;const xn=(Math.log(p/A)-llo)/(lhi-llo),px=cx+(xn-.5)*W;x.fillText(p+'%',px,h-8);x.fillRect(px,baseY+8,1,4);}
+  const ex=cx+((Math.log(d.est[day])-llo)/(lhi-llo)-.5)*W;x.strokeStyle=C.accent;x.lineWidth=1;cross(x,ex,baseY,10);
+  x.fillStyle=C.accent;x.textAlign='left';x.fillText('σ̂ '+(d.est[day]*A).toFixed(1)+'%',ex+14,baseY-10);
+}
+function drawCharts(day){
+  const d=D,s=S,f=d.f;
+  drawSurface(day);
+  {const[x,w,h]=fit($('price')),top=6,bot=h-60,Y=v=>bot-(v-d.pmin)/(d.pmax-d.pmin)*(bot-top);
+    yAxis(x,w,top,bot,d.pmin,d.pmax,v=>v.toFixed(0),4);marks(x,w,top,h-4,day);
+    const r=rng(91);x.fillStyle=`rgba(${C.deepA},.55)`;
+    for(let t=0;t<=day;t++){const p=d.price[t],e=d.est[t],a=Y(p*(1+2*e)),b=Y(p*(1-2*e)),n=3+Math.floor((b-a)/4);for(let i=0;i<n;i++)x.fillRect(X(t,w)+(r()-.5)*2,a+r()*(b-a),1,1);}
+    x.strokeStyle=C.ink;x.lineWidth=1.25;path(x,w,d.price,day,Y);
+    if(s.forecast){const p0=d.price[day],e=Math.sqrt(f.predVar[day]),rr=rng(day*7+3);
+      x.globalCompositeOperation='lighter';x.fillStyle=`rgba(${C.inkA},.4)`;
+      for(let j=0;j<60;j++){let p=p0;for(let k=1;k<=H;k++){p*=Math.exp(e*normal(rr));x.fillRect(X(day+k,w),Y(p),1.2,1.2);}}
+      x.globalCompositeOperation='source-over';}
+    const y0=h-28;x.fillStyle=C.dim;x.font=FONT;x.textAlign='right';x.textBaseline='middle';x.fillText('r_t',36,y0);
+    for(let t=0;t<=day;t++){const m=Math.abs(d.ret[t])/d.est[Math.max(0,t-1)],bh=d.ret[t]/d.rmax*24,px=X(t,w);
+      x.fillStyle=m>3?C.shock:`rgba(${C.inkA},${Math.min(.95,.25+m*.22)})`;
+      const n=Math.max(1,Math.round(Math.abs(bh)/2));for(let i=0;i<n;i++)x.fillRect(px,y0-Math.sign(bh)*i*2,1.2,1.2);}
+  }
+  {const[x,w,h]=fit($('fan')),top=6,bot=h-6,vm=d.vmax,Y=v=>bot-(v*A)/vm*(bot-top);
+    yAxis(x,w,top,bot,0,vm,v=>v.toFixed(0),5);
+    x.globalCompositeOperation='lighter';
+    for(let t=0;t<=day;t++){const r=rng(t*31+7),px=X(t,w),cum=cumulative(f,t);
+      for(let i=0;i<34;i++){const lv=sampleLogVol(cum,r()),g=(lv-Math.log(d.est[t]))/f.lu[t],yy=Y(Math.exp(lv));if(yy<top)continue;
+        x.fillStyle=`rgba(${Math.abs(g)>1.2?C.deepA:C.inkA},${.2+.3*r()})`;x.fillRect(px+(r()-.5)*2.2,yy,1.1,1.1);}}
+    x.globalCompositeOperation='source-over';
+    marks(x,w,top,bot,day);
+    x.fillStyle=`rgba(${C.inkA},.5)`;dline(x,w,f.q[4],day,Y,3);dline(x,w,f.q[0],day,Y,3);
+    x.fillStyle=`rgba(${C.inkA},.8)`;dline(x,w,f.q[3],day,Y,2);dline(x,w,f.q[1],day,Y,2);
+    for(const [k,arr,col,dash,from] of [['roll',d.roll,C.roll,[],19],['ewma',d.ewma,C.ewma,[],20],['garch',d.garch,C.garch,[6,3,1,3],20],['vix',d.vix,C.vix,[2,3],0]])
+      if(arr&&s.show[k]){x.strokeStyle=col;x.lineWidth=1.25;x.setLineDash(dash);path(x,w,arr,day,Y,from);x.setLineDash([]);}
+    if(s.show.truth){x.strokeStyle=C.ink;x.lineWidth=1;x.setLineDash([4,4]);path(x,w,d.ref,day,Y);x.setLineDash([]);}
+    x.strokeStyle=C.ink;x.lineWidth=2;path(x,w,f.q[2],day,Y);
+    const px=X(day,w),py=Y(f.q[2][day]);x.strokeStyle=C.accent;x.lineWidth=1;cross(x,px,py,12);
+    x.fillStyle='#04070b';x.fillRect(px-3,py-3,6,6);x.strokeRect(px-3.5,py-3.5,7,7);
+  }
+  {const[x,w,h]=fit($('ess')),top=4,bot=h-20,Y=v=>bot-v*(bot-top);
+    x.font=FONT;x.fillStyle=C.dim;x.textAlign='right';x.textBaseline='middle';x.fillText('1.0',36,Y(1));x.fillText('0.5',36,Y(.5));
+    x.fillStyle=C.accent;for(let px=44;px<w-6;px+=4)x.fillRect(px,Y(.5),1.5,1);
+    for(let t=0;t<=day;t+=2){const px=X(t,w),lo=f.ess[t]<.5;x.fillStyle=lo?C.accent:`rgba(${C.deepA},.9)`;for(let y=bot;y>Y(f.ess[t]);y-=3)x.fillRect(px,y,1.3,1.3);}
+    marks(x,w,top,bot,day);
+    x.textAlign='center';x.textBaseline='top';x.fillStyle=C.dim;
+    for(let t=0;t<D.T+H;t+=50)x.fillText(dateLabel(t,true).toUpperCase(),X(t,w),bot+6);
+  }
+}
+// posterior samples for the fan: inverse-CDF draws from the stored density
+function cumulative(f,t){const c=new Float32Array(G);let a=0;for(let b=0;b<G;b++){a+=f.dens[t*G+b];c[b]=a;}for(let b=0;b<G;b++)c[b]/=a||1;return c;}
+function sampleLogVol(c,u){let lo=0,hi=G-1;while(lo<hi){const m=(lo+hi)>>1;c[m]<u?lo=m+1:hi=m;}return GLO+(lo+.5)*GW;}
+
+let pc=-1,pcache=null;
+function particles(day){
+  if(pc===day)return pcache;const f=D.f,K=f.K,o=day*K,r=rng(day*131+17);
+  const e=f.est[day],u=f.lu[day],P=[];
+  for(let k=0;k<K;k++)P.push({prev:f.prev[o+k],pred:f.pred[o+k],w:f.wn[o+k],par:f.par[o+k],y:f.py[o+k],y2:f.py2[o+k]});
+  const lo=e*Math.exp(-3*u),hi=e*Math.exp(3*u),obs=Math.max(lo,Math.min(hi,Math.abs(D.ret[day])||lo));
+  pc=day;pcache={P,lo,hi,obs,resampled:!!f.resampled[day]};return pcache;
+}
+function drawStrip(day,phase){
+  if(!D)return;const[x,w,h]=fit($('strip'));
+  const{P,lo,hi,obs,resampled}=particles(day),top=26,bot=h-24,L=44,R=w-6;
+  const Xv=v=>L+(Math.log(v)-Math.log(lo))/(Math.log(hi)-Math.log(lo))*(R-L);
+  x.font=FONT;x.textBaseline='middle';x.strokeStyle=C.grid;x.fillStyle=C.grid;x.lineWidth=1;
+  for(let i=0;i<=5;i++){const px=Math.round(Xv(lo*Math.pow(hi/lo,i/5)))+.5;cross(x,px,top,3);cross(x,px,bot,3);}
+  x.fillStyle=C.dim;
+  for(let i=0;i<=5;i++){const v=lo*Math.pow(hi/lo,i/5),px=Math.round(Xv(v))+.5;x.textAlign=i===5?'right':i===0?'left':'center';x.fillText((v*A).toFixed(1)+'%',px,h-9);}
+  const names=['PREDICT','WEIGHT','RESAMPLE'],cur=phase<.33?0:phase<.66?1:2;x.textAlign='left';let px0=L;
+  const narrow=w<560;
+  names.forEach((nm,i)=>{let lab='0'+(i+1)+' '+nm;if(i===2&&!resampled)lab+=narrow?' ×':' (SKIPPED)';if(i===cur){x.fillStyle=C.accent;x.fillRect(px0,8,6,6);}x.fillStyle=i===cur?C.ink:'rgba(228,236,233,.35)';x.fillText(lab,px0+(narrow?10:12),11);px0+=x.measureText(lab).width+(narrow?22:36);});
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,cl=v=>Math.max(0,Math.min(1,v));
+  const a=ease(cl(phase/.33)),b=ease(cl((phase-.33)/.33)),c2=resampled?ease(cl((phase-.66)/.34)):0;
+  if(cur>=1){   // observation line and the likelihood of today's return as a function of vol
+    const gx=Xv(obs),rr=D.ret[day]*D.ret[day];x.fillStyle=`rgba(${C.inkA},${.3+.5*b})`;for(let y=top;y<bot;y+=3)x.fillRect(gx,y,1,1.5);
+    const peak=Math.exp(-.5)/Math.sqrt(rr||1e-12);   // likelihood at its maximum (vol = |r|), for scaling
+    for(let px=L;px<=R;px+=3){const v=lo*Math.pow(hi/lo,(px-L)/(R-L)),lk=Math.exp(-rr/(2*v*v))/v/peak;
+      x.fillRect(px,bot-Math.min(1,lk)*30*b,1.2,1.2);}
+  }
+  x.globalCompositeOperation='lighter';
+  for(const p of P){let vx,vy,rad,al;const wn=p.w;
+    if(cur===0){vx=p.prev+(p.pred-p.prev)*a;vy=p.y;rad=1.6;al=.6;}
+    else if(cur===1){vx=p.pred;vy=p.y;rad=1.4+b*4.5*Math.sqrt(wn);al=.25+.65*(1-b+b*wn);}
+    else{vx=p.pred+(p.par-p.pred)*c2;vy=p.y+(p.y2-p.y)*c2;rad=(1.4+4.5*Math.sqrt(wn))*(1-c2)+1.6*c2;al=(.25+.65*wn)*(1-c2)+.6*c2;}
+    const px=Xv(Math.max(lo*.5,Math.min(hi*2,vx))),py=top+vy*(bot-top);
+    x.fillStyle=`rgba(${C.deepA},${al*.25})`;x.beginPath();x.arc(px,py,rad*2.6,0,7);x.fill();
+    x.fillStyle=`rgba(${C.inkA},${al})`;x.beginPath();x.arc(px,py,rad,0,7);x.fill();}
+  x.globalCompositeOperation='source-over';
+  x.strokeStyle=C.accent;x.lineWidth=1;cross(x,Xv(D.est[day]),bot,8);
+}
+function redraw(){if(!D)return;const day=Math.floor(dayF);drawCharts(day);drawnDay=day;drawStrip(day,S.playing?dayF%1:.6);}
+
+/* ---------- text and controls ---------- */
+const STEPS=[['Predict','Each particle is a guess at volatility. Every guess drifts one day forward (volatility changes slowly) plus a little noise.'],['Weight','Score each particle by how likely today’s return is under its volatility. A large move favours high-vol particles.'],['Resample','When ESS falls below N/2, low-weight particles sink and copies of high-weight ones take their place.']];
+const pct=v=>(v*A).toFixed(1)+'%';
+// One plain-English line per day: what the return was, how the weights moved, what the estimate did.
+function captionText(day){
+  const f=D.f,e=D.est[day],ep=D.est[Math.max(0,day-1)],shift=e/f.priorMean[day];
+  const a=ep*A,b=e*A,z=Math.abs(D.ret[day])/ep;
+  const when=isReal()?dateLabel(day):'Day '+day;
+  const pred=f.priorMean[day]*A;                      // what the predict step expected, before seeing today's return
+  const weights=(shift>1.02?'high-vol particles gained weight':shift<.98?'low-vol particles gained weight':'weights barely shifted')+` (prediction ${pred.toFixed(1)}%)`;
+  const est=b>a*1.005?`estimate rose ${a.toFixed(1)}% → ${b.toFixed(1)}%`:b<a*.995?`estimate fell ${a.toFixed(1)}% → ${b.toFixed(1)}%`:`estimate held at ${b.toFixed(1)}%`;
+  const rs=f.resampled[day]?'resampled':`no resample (ESS ${Math.round(f.ess[day]*100)}%)`;
+  return `<b>${when}:</b> return was ${z.toFixed(1)}σ̂ → ${weights} → ${est}, ${rs}.`;
+}
+function render(){
+  if(!D)return;const f=D.f,day=Math.min(S.day,D.T-1),n=NS[S.nIdx],real=isReal();
+  const e=D.est[day],ep=D.est[Math.max(0,day-1)],e5=D.est[Math.max(0,day-5)];
+  // mean abs error against the reference (true vol, or the realized vol of the next 5 days), from day 25
+  const hi=day-(real?5:0);
+  const mae=a=>{let q=0,k=0;for(let t=25;t<=hi;t++){if(!isFinite(a[t])||!isFinite(D.ref[t]))continue;q+=Math.abs(a[t]-D.ref[t]);k++;}return k?q/k:NaN;};
+  const mf=mae(D.est),rel=a=>{const r=Math.round((mf/mae(a)-1)*100);return isFinite(r)?(r>0?'+':'−')+Math.abs(r)+'%':'–';};
+  let rs=0;for(let t=0;t<=day;t++)rs+=f.resampled[t];
+  const dv=(e-ep)*A,tr=(e-e5)/e5;
+  $('seedTag').textContent=real?'SPY · 2018–20':'SEED 0005';
+  $('caption').innerHTML=captionText(day);
+  $('dayLabel').textContent=dateLabel(day);$('nHead').textContent='N='+n.toLocaleString();
+  $('live').textContent=S.playing?'ON':'OFF';$('live').style.color=S.playing?C.accent:C.dim;
+  $('volAnn').textContent=(e*A).toFixed(1);$('volDelta').textContent=(dv>=0?'+':'−')+Math.abs(dv).toFixed(2);$('volDelta').style.color=dv>=0?C.shock:C.accent;
+  $('current').textContent='VOLATILITY '+(tr>.04?'RISING':tr<-.04?'FALLING':'STEADY');$('arrow').style.transform='rotate('+(tr>.04?-45:tr<-.04?45:0)+'deg)';
+  const rows=[['90% BAND LOW',pct(f.q[0][day])],['90% BAND HIGH',pct(f.q[4][day])],['ESS / N',Math.round(f.ess[day]*n).toLocaleString()+' / '+n.toLocaleString()],['RESAMPLES',String(rs)],
+    ['RETURN r_t',(D.ret[day]*100).toFixed(2)+'%'],['MOVE |r_t|/σ̂',(Math.abs(D.ret[day])/ep).toFixed(2)],
+    ['ERR VS 20D STD',rel(D.roll)],['ERR VS EWMA',rel(D.ewma)],['ERR VS GARCH',rel(D.garch)],
+    [real?'REALIZED, NEXT 5D':'TRUE VOL',isFinite(D.ref[day])?pct(D.ref[day]):'–']];
+  if(real)rows.push(['VIX',isFinite(D.vix[day])?pct(D.vix[day]):'–']);
+  $('rows').innerHTML=rows.map((r,i)=>`<div class="row"><span class="muted"><span class="k">${String(i+1).padStart(2,'0')}</span>${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+  $('fcLabel').textContent=S.forecast?'DRIFT FAN · 20D →':'';$('dayN').textContent=day;$('drawn').textContent=Math.min(n,KSHOW)+' / '+n.toLocaleString()+' DRAWN';
+  $('play').textContent=S.playing?'Pause':'Play';
+  $('speedLab').textContent=S.speed.toFixed(1)+' d/s';$('phiLab').textContent=S.phi.toFixed(3);$('sigLab').textContent=S.sig.toFixed(2);$('nLab').textContent=n.toLocaleString();
+  $('phiTLab').textContent=S.phiT.toFixed(3);$('sigTLab').textContent=S.sigT.toFixed(2);
+  document.querySelectorAll('.preset').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===S.preset));
+  $('wave').disabled=real;$('phiT').disabled=$('sigT').disabled=real;
+  const pi={predict:0,weight:1,resample:2}[S.phase];
+  document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('on',i===pi));
+  const chip=(k,label,col,dash)=>{const on=S.show[k];return`<button class="chip" data-k="${k}" aria-pressed="${on}"><span><span class="box">${on?'[×]':'[ ]'}</span>${label}</span><span class="sw" style="border-top:1.5px ${dash} ${col}"></span></button>`;};
+  const fixed=(label,col,dash)=>`<button class="chip" disabled style="opacity:1;cursor:default"><span><span class="box">[■]</span>${label}</span><span class="sw" style="border-top:1.5px ${dash} ${col}"></span></button>`;
+  $('chips').innerHTML=fixed('Filtered median',C.ink,'solid')+chip('truth',real?'Realized vol (next 5d)':'True vol',C.ink,'dashed')+chip('roll','20d rolling std',C.roll,'solid')+chip('ewma','EWMA (0.94)',C.ewma,'solid')+chip('garch','GARCH(1,1)',C.garch,'dashed')+(real?chip('vix','VIX (implied)',C.vix,'dotted'):'')+fixed(real?'Shock (>4σ̂)':'Shock day',C.shock,'dotted');
+}
+function setup(){
+  $('presets').innerHTML=[['calm','Calm','Flat sea'],['2008','2008','Long swell'],['2020','2020','Squall'],[REAL_PRESET,'Real: SPY 2020','Actual market']].map(([k,l,s])=>`<button class="preset" data-k="${k}" aria-pressed="false"><span>${l}</span><small>${s}</small></button>`).join('');
+  $('steps').innerHTML=STEPS.map(([t,b],i)=>`<div class="step"><span class="n">0${i+1}</span><div><span class="t">${t.toUpperCase()}</span><p>${b}</p></div></div>`).join('');
+  $('presets').addEventListener('click',e=>{const b=e.target.closest('.preset');if(!b)return;setPreset(b.dataset.k);});
+  $('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b||b.disabled)return;S.show[b.dataset.k]=!S.show[b.dataset.k];redraw();render();});
+  $('play').onclick=togglePlay;$('step').onclick=step;$('reset').onclick=()=>{dayF=70;S.day=70;redraw();render();};
+  $('wave').onclick=()=>{S.extra.push({t:Math.min(D.T-1,S.day+1),size:1.5});rebuild();};
+  $('fc').onchange=e=>{S.forecast=e.target.checked;redraw();render();};
+  $('speed').oninput=e=>{S.speed=+e.target.value;render();};
+  let pending=false;const later=fn=>{if(pending)return;pending=true;setTimeout(()=>{pending=false;fn();},20);};
+  const slide=key=>e=>{S[key]=+e.target.value;render();later(rebuild);};   // labels now, filter re-run right after
+  $('phi').oninput=slide('phi');$('sig').oninput=slide('sig');$('nIdx').oninput=slide('nIdx');
+  $('phiT').oninput=slide('phiT');$('sigT').oninput=slide('sigT');
+  $('jump').onchange=e=>{S.jump=e.target.checked;later(rebuild);};$('tnoise').onchange=e=>{S.tnoise=e.target.checked;later(rebuild);};
+  window.addEventListener('keydown',e=>{
+    if(!S.entered){if(e.code==='Enter'||e.code==='Space'||e.code==='NumpadEnter'){e.preventDefault();enter();}return;}   // before Enter, only these keys act
+    if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'&&e.code==='Space')return;if(e.code==='Space'){e.preventDefault();togglePlay();}if(e.code==='ArrowRight'){e.preventDefault();step();}});
+}
+function enter(){
+  if(S.entered)return;
+  S.entered=true;
+  $('intro').classList.add('gone');$('intro').setAttribute('aria-hidden','true');
+  $('page').inert=false;
+  S.playing=!reduced;                      // reduced motion: stay paused
+  render();                                // focus is left alone: a button focused on keydown would also get the Space keyup as a click
+}
+function togglePlay(){stepT=null;S.playing=!S.playing;render();}
+function step(){S.playing=false;dayF=Math.min(D.T-1,Math.floor(dayF)+1);stepT=0;render();}
+/* ---------- animation loop ---------- */
+function frame(dt){
+  if(!D)return;
+  if(S.playing){dayF+=dt*S.speed;if(dayF>=D.T)dayF=70;}
+  else if(stepT!=null){stepT+=dt*1.4;if(stepT>=1){stepT=null;dayF=Math.floor(dayF)+.999;}else dayF=Math.floor(dayF)+stepT;}
+  const phase=S.playing&&reduced?.999:dayF%1,day=Math.floor(dayF),pn=phase<.33?'predict':phase<.66?'weight':'resample';
+  if(day!==S.day||pn!==S.phase){S.day=day;S.phase=pn;render();}
+  if(day!==drawnDay){drawCharts(day);drawnDay=day;}
+  drawStrip(day,phase);
+}
+function init(){
+  reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setup();buildData();render();redraw();   // drawn but paused until Enter
+  $('enter').onclick=enter;$('enter').focus({preventScroll:true});
+  new ResizeObserver(redraw).observe($('stack'));
+  if(document.fonts)document.fonts.ready.then(redraw);
+  let last=performance.now();const loop=now=>{const dt=Math.min(.1,(now-last)/1000);last=now;frame(dt);requestAnimationFrame(loop);};
+  requestAnimationFrame(loop);
+}
+window.undertow={runFilter,simulate,ewmaVol,garchNext,frame,enter,setPreset,state:S,get data(){return D;}};   // for tests / console poking
+init();
+</script>
+</body>
+</html>

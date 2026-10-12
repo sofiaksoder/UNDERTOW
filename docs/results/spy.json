@@ -1,0 +1,301 @@
+{
+  "ticker": "SPY",
+  "train": [
+    "2010-01-04",
+    "2018-12-31"
+  ],
+  "test": [
+    "2019-01-01",
+    "2024-12-31"
+  ],
+  "particles": 2000,
+  "seeds_averaged": 5,
+  "filter_params": {
+    "mu": -9.856218644172229,
+    "phi": 0.94,
+    "sigma_eta": 0.35
+  },
+  "jump": {
+    "prob": 0.003,
+    "mean": 1.5,
+    "std": 0.5
+  },
+  "dof": 20.0,
+  "garch_params_fit_2010_2018": {
+    "omega": 3.4152815995784346e-06,
+    "alpha": 0.1537344386388814,
+    "beta": 0.8097013302424629
+  },
+  "scores": {
+    "2019-2024 (out of sample)": {
+      "Particle filter (default params)": {
+        "qlike": -8.21340035848376,
+        "mae_rv5": 0.0035396593421268717,
+        "n_days": 1504
+      },
+      "Particle filter (fitted)": {
+        "qlike": -8.230231912457914,
+        "mae_rv5": 0.0034870780421639865,
+        "n_days": 1504
+      },
+      "Particle filter (fitted + jump)": {
+        "qlike": -8.232792671956433,
+        "mae_rv5": 0.0035365466687206967,
+        "n_days": 1504
+      },
+      "Particle filter (fitted + Student-t)": {
+        "qlike": -8.231981427348313,
+        "mae_rv5": 0.003514807038696729,
+        "n_days": 1504
+      },
+      "Particle filter (fitted + jump + t)": {
+        "qlike": -8.234808887920487,
+        "mae_rv5": 0.0035622242038831423,
+        "n_days": 1504
+      },
+      "Rolling std (20d)": {
+        "qlike": -8.14071385782781,
+        "mae_rv5": 0.003956411883370285,
+        "n_days": 1504
+      },
+      "EWMA (0.94)": {
+        "qlike": -8.192059745349239,
+        "mae_rv5": 0.00399211676949305,
+        "n_days": 1504
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "qlike": -8.242280378018682,
+        "mae_rv5": 0.003473271200970807,
+        "n_days": 1504
+      }
+    },
+    "2020 Feb-Jun": {
+      "Particle filter (default params)": {
+        "qlike": -5.941772249614389,
+        "mae_rv5": 0.010366120289223457,
+        "n_days": 104
+      },
+      "Particle filter (fitted)": {
+        "qlike": -6.188862144032204,
+        "mae_rv5": 0.009599515772416788,
+        "n_days": 104
+      },
+      "Particle filter (fitted + jump)": {
+        "qlike": -6.240464040854598,
+        "mae_rv5": 0.009523515245251836,
+        "n_days": 104
+      },
+      "Particle filter (fitted + Student-t)": {
+        "qlike": -6.195324593782828,
+        "mae_rv5": 0.009601505918637367,
+        "n_days": 104
+      },
+      "Particle filter (fitted + jump + t)": {
+        "qlike": -6.2604574813988645,
+        "mae_rv5": 0.009438567631063084,
+        "n_days": 104
+      },
+      "Rolling std (20d)": {
+        "qlike": -6.118095667571681,
+        "mae_rv5": 0.013697561513571778,
+        "n_days": 104
+      },
+      "EWMA (0.94)": {
+        "qlike": -6.0084016658896315,
+        "mae_rv5": 0.014650929942022413,
+        "n_days": 104
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "qlike": -6.272024589536188,
+        "mae_rv5": 0.010180757737191412,
+        "n_days": 104
+      }
+    },
+    "2022": {
+      "Particle filter (default params)": {
+        "qlike": -7.306959067297496,
+        "mae_rv5": 0.003842830317296836,
+        "n_days": 251
+      },
+      "Particle filter (fitted)": {
+        "qlike": -7.2835993913925625,
+        "mae_rv5": 0.003932194735078174,
+        "n_days": 251
+      },
+      "Particle filter (fitted + jump)": {
+        "qlike": -7.289160346284819,
+        "mae_rv5": 0.003970892261411041,
+        "n_days": 251
+      },
+      "Particle filter (fitted + Student-t)": {
+        "qlike": -7.293083218781955,
+        "mae_rv5": 0.0039003017934097404,
+        "n_days": 251
+      },
+      "Particle filter (fitted + jump + t)": {
+        "qlike": -7.299068369027724,
+        "mae_rv5": 0.003938118987904784,
+        "n_days": 251
+      },
+      "Rolling std (20d)": {
+        "qlike": -7.313857943256534,
+        "mae_rv5": 0.004244365578363554,
+        "n_days": 251
+      },
+      "EWMA (0.94)": {
+        "qlike": -7.338581060574028,
+        "mae_rv5": 0.004076544521492291,
+        "n_days": 251
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "qlike": -7.273437608204541,
+        "mae_rv5": 0.0040891972626950135,
+        "n_days": 251
+      }
+    },
+    "2019 + 2021 (calmer)": {
+      "Particle filter (default params)": {
+        "qlike": -8.705486000587237,
+        "mae_rv5": 0.0031403279236829917,
+        "n_days": 504
+      },
+      "Particle filter (fitted)": {
+        "qlike": -8.732237847297858,
+        "mae_rv5": 0.003028852281424625,
+        "n_days": 504
+      },
+      "Particle filter (fitted + jump)": {
+        "qlike": -8.729645794357173,
+        "mae_rv5": 0.003098966720410752,
+        "n_days": 504
+      },
+      "Particle filter (fitted + Student-t)": {
+        "qlike": -8.729898153615293,
+        "mae_rv5": 0.003079302899786443,
+        "n_days": 504
+      },
+      "Particle filter (fitted + jump + t)": {
+        "qlike": -8.726873699748552,
+        "mae_rv5": 0.0031512342532772474,
+        "n_days": 504
+      },
+      "Rolling std (20d)": {
+        "qlike": -8.570400277031604,
+        "mae_rv5": 0.0033622420716001447,
+        "n_days": 504
+      },
+      "EWMA (0.94)": {
+        "qlike": -8.656855576688391,
+        "mae_rv5": 0.003280343194451585,
+        "n_days": 504
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "qlike": -8.742135800410232,
+        "mae_rv5": 0.0029518622880632724,
+        "n_days": 504
+      }
+    }
+  },
+  "diebold_mariano_qlike_2019_2024": {
+    "Particle filter (fitted)": {
+      "Particle filter (default params)": {
+        "mean_qlike_diff": -0.016831553974153275,
+        "z": -0.8871433933331673,
+        "p_value": 0.37500170414791417
+      },
+      "Particle filter (fitted + jump)": {
+        "mean_qlike_diff": 0.0025607594985199576,
+        "z": 0.9101710171808606,
+        "p_value": 0.36273232643045905
+      },
+      "Particle filter (fitted + Student-t)": {
+        "mean_qlike_diff": 0.0017495148903972763,
+        "z": 1.0319574570184278,
+        "p_value": 0.30209204764977116
+      },
+      "Particle filter (fitted + jump + t)": {
+        "mean_qlike_diff": 0.004576975462573488,
+        "z": 1.1627361778159266,
+        "p_value": 0.24493655851033533
+      },
+      "Rolling std (20d)": {
+        "mean_qlike_diff": -0.08951805463010447,
+        "z": -2.925663158426928,
+        "p_value": 0.003437228824237617
+      },
+      "EWMA (0.94)": {
+        "mean_qlike_diff": -0.03817216710867596,
+        "z": -1.8524517458384873,
+        "p_value": 0.06396098061658462
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "mean_qlike_diff": 0.012048465560766834,
+        "z": 1.669577636731345,
+        "p_value": 0.0950029580518223
+      }
+    },
+    "Particle filter (fitted + jump + t)": {
+      "Particle filter (default params)": {
+        "mean_qlike_diff": -0.021408529436726775,
+        "z": -0.9971378136635897,
+        "p_value": 0.3186976207142092
+      },
+      "Particle filter (fitted)": {
+        "mean_qlike_diff": -0.004576975462573488,
+        "z": -1.1627361778159266,
+        "p_value": 0.24493655851033533
+      },
+      "Particle filter (fitted + jump)": {
+        "mean_qlike_diff": -0.002016215964053531,
+        "z": -1.1454910697950405,
+        "p_value": 0.2520057926085695
+      },
+      "Particle filter (fitted + Student-t)": {
+        "mean_qlike_diff": -0.002827460572176211,
+        "z": -0.8380067869978302,
+        "p_value": 0.40202689173302353
+      },
+      "Rolling std (20d)": {
+        "mean_qlike_diff": -0.09409503009267794,
+        "z": -2.9044874868980237,
+        "p_value": 0.003678549073909214
+      },
+      "EWMA (0.94)": {
+        "mean_qlike_diff": -0.04274914257124945,
+        "z": -1.9478237251102803,
+        "p_value": 0.05143605893108731
+      },
+      "GARCH(1,1), fit on 2010-2018": {
+        "mean_qlike_diff": 0.007471490098193342,
+        "z": 1.0198053499680018,
+        "p_value": 0.307820785393888
+      }
+    }
+  },
+  "diebold_mariano_qlike_2020_feb_jun": {
+    "Particle filter (fitted) vs GARCH(1,1), fit on 2010-2018": {
+      "mean_qlike_diff": 0.083162445503983,
+      "z": 1.399242486835882,
+      "p_value": 0.16174027982541958,
+      "n_days": 104
+    },
+    "Particle filter (fitted + jump) vs GARCH(1,1), fit on 2010-2018": {
+      "mean_qlike_diff": 0.03156054868158937,
+      "z": 0.690049394392625,
+      "p_value": 0.49016312555651875,
+      "n_days": 104
+    },
+    "Particle filter (fitted + jump) vs Particle filter (fitted)": {
+      "mean_qlike_diff": -0.05160189682239362,
+      "z": -2.0916274229607508,
+      "p_value": 0.036471857442684184,
+      "n_days": 104
+    },
+    "Particle filter (fitted + jump + t) vs Particle filter (fitted)": {
+      "mean_qlike_diff": -0.07159533736666007,
+      "z": -2.467616780296409,
+      "p_value": 0.013601584684935542,
+      "n_days": 104
+    }
+  }
+}

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undertow guide · how it works and how to use it</title>
+<meta name="description" content="A plain-language guide to Undertow: what the simulation shows, how the particle filter works, and how to use every control.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@200;300;400&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+:root{--ink:#e4ece9;--ink2:#c4d2ce;--muted:#7f9590;--faint:#3d5560;--rule:#1c2a33;--ctl:#2f4450;--accent:#9ed0c4;--coral:#e8735a;--body:#b3c4bf;}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+html,body{margin:0;background:#04070b;}
+a{color:var(--accent);text-underline-offset:3px;} a:hover{color:var(--ink);}
+:focus-visible{outline:1px solid var(--accent);outline-offset:3px;}
+.page{position:relative;min-height:100vh;background:linear-gradient(180deg,#04070b 0%,#050b12 55%,#0a2036 100%);color:var(--ink);font-family:'Geist',system-ui,sans-serif;font-weight:300;font-size:16.5px;line-height:1.7;}
+.dots{position:fixed;inset:0;background-image:radial-gradient(rgba(158,208,196,.10) 1px,transparent 1.4px);background-size:24px 24px;pointer-events:none;}
+.wrap{position:relative;max-width:1080px;margin:0 auto;padding:14px clamp(16px,3vw,32px) 80px;}
+.mono{font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px;padding:8px 0 12px;border-bottom:1px solid var(--rule);}
+.brand{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+.brand a{text-decoration:none;color:var(--ink);}
+.brand b{font:300 26px 'Geist',sans-serif;letter-spacing:.32em;}
+.muted{color:var(--muted);}
+.btn{display:inline-block;font:400 11px 'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--ink);border:1px solid var(--ctl);padding:7px 12px;}
+.btn:hover{background:var(--ink);color:#04070b;}
+.btn.primary{background:var(--ink);color:#04070b;border-color:var(--ink);}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent);}
+.hero{padding:44px 0 28px;max-width:760px;}
+h1{margin:0 0 14px;font-weight:200;font-size:clamp(34px,6vw,56px);line-height:1.08;letter-spacing:-.02em;}
+.lede{font-size:clamp(18px,2.2vw,21px);line-height:1.6;color:var(--ink2);margin:0 0 22px;}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;}
+nav.toc a{font:400 11px 'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--ink2);border:1px solid var(--ctl);padding:5px 9px;}
+nav.toc a:hover{border-color:var(--accent);color:var(--accent);}
+section{padding:36px 0 8px;border-top:1px solid var(--rule);margin-top:36px;scroll-margin-top:12px;}
+h2{margin:0 0 6px;font-weight:300;font-size:clamp(24px,3.4vw,32px);letter-spacing:-.01em;}
+.kicker{display:block;margin-bottom:10px;color:var(--muted);}
+.kicker i{font-style:normal;color:var(--accent);margin-right:8px;}
+h3{margin:28px 0 6px;font-weight:400;font-size:18px;color:var(--ink);}
+p{margin:0 0 14px;color:var(--body);max-width:68ch;}
+ul,ol{margin:0 0 16px;padding-left:1.2em;color:var(--body);max-width:68ch;}
+li{margin:5px 0;}
+strong{font-weight:400;color:var(--ink);}
+code{font:400 .86em 'Geist Mono',monospace;color:var(--accent);background:rgba(158,208,196,.07);padding:1px 5px;}
+.callout{border:1px solid var(--ctl);border-left:2px solid var(--accent);padding:12px 16px;margin:18px 0;max-width:72ch;background:rgba(10,32,54,.35);}
+.callout p{margin:0;color:var(--ink2);} .callout .mono{display:block;color:var(--accent);margin-bottom:4px;}
+.callout.warn{border-left-color:var(--coral);} .callout.warn .mono{color:var(--coral);}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0;}
+.step{border:1px solid var(--ctl);padding:14px 16px;background:rgba(4,7,11,.4);}
+.step .n{font:400 11px 'Geist Mono',monospace;color:var(--accent);letter-spacing:.06em;}
+.step h4{margin:2px 0 6px;font-weight:400;font-size:18px;}
+.step p{margin:0;font-size:15px;line-height:1.6;}
+dl{margin:0 0 16px;max-width:76ch;}
+.row{display:grid;grid-template-columns:minmax(130px,200px) 1fr;gap:4px 20px;padding:10px 0;border-bottom:1px dotted var(--rule);}
+.row dt{font:400 11px/1.7 'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);}
+.row dt small{display:block;color:var(--muted);font-size:10px;}
+.row dd{margin:0;color:var(--body);font-size:15.5px;}
+.row dd ul{margin:0;padding-left:1.1em;max-width:none;} .row dd li{margin:4px 0;}
+pre.eq{margin:10px 0 14px;padding:12px 16px;border:1px solid var(--ctl);border-left:2px solid var(--accent);background:rgba(10,32,54,.35);color:var(--ink2);font:400 14px/1.7 'Geist Mono',monospace;overflow-x:auto;max-width:72ch;}
+.tryit{counter-reset:t;list-style:none;padding:0;max-width:76ch;}
+.tryit li{counter-increment:t;display:grid;grid-template-columns:34px 1fr;gap:8px;padding:10px 0;border-bottom:1px dotted var(--rule);}
+.tryit li::before{content:"0" counter(t);font:400 11px/1.9 'Geist Mono',monospace;color:var(--accent);}
+.cmp{width:100%;max-width:760px;border-collapse:collapse;margin:8px 0 18px;font-size:15px;}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:9px 12px 9px 0;border-bottom:1px dotted var(--rule);color:var(--body);}
+.cmp th{font:400 11px 'Geist Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.cmp td:first-child{color:var(--ink);white-space:nowrap;padding-right:18px;}
+details{border-bottom:1px dotted var(--rule);padding:10px 0;max-width:76ch;}
+summary{cursor:pointer;color:var(--ink);font-weight:400;}
+details p{margin:8px 0 0;}
+footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;color:var(--muted);}
+@media (max-width:640px){.row{grid-template-columns:1fr;} .cmp td:first-child{white-space:normal;}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+<div class="page"><div class="dots" aria-hidden="true"></div>
+<div class="wrap">
+
+<header>
+  <div class="brand"><a href="index.html"><b>UNDERTOW</b></a><span class="muted mono">Guide</span></div>
+  <a class="btn primary" href="index.html">Open the demo →</a>
+</header>
+
+<div class="hero">
+  <h1>How Undertow works, and how to use it</h1>
+  <p class="lede">Markets behave like ocean currents: sometimes calm, sometimes jumpy, and sometimes pulled by hidden undercurrents. Undertow is a live demo that infers the hidden current from nothing but daily price moves, on simulated markets and on real SPY data, and lets you adjust the key factors.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#what">What it is</a><a href="#idea">The idea</a><a href="#how">How it works</a><a href="#screen">Reading the screen</a><a href="#controls">Controls</a><a href="#try">Things to try</a><a href="#good">How well it works</a><a href="#limits">Limits</a><a href="#words">Glossary</a><a href="#tech">Under the sea</a>
+  </nav>
+</div>
+
+<section id="what">
+  <span class="kicker mono"><i>01</i>What it is</span>
+  <h2>A volatility detector you can watch in real time</h2>
+  <p><strong>Volatility</strong> is how wildly a price swings. A calm stock might move 0.5% on a typical day; in extreme events the same stock can move 5%.</p>
+  <p>The catch: <strong>you can never observe volatility directly</strong>, only prices. A big move today might mean the market has become jumpy, or it might be one random stagger in a calm market. Telling the two apart is the problem Undertow solves.</p>
+  <p>Undertow uses a Monte Carlo method called <strong>particle filtering</strong>. It runs entirely in your browser and shows every step: the guesses, how they’re scored, and the conclusion it reaches each day.</p>
+</section>
+
+<section id="idea">
+  <span class="kicker mono"><i>02</i>The idea</span>
+  <h2>The surface and the undertow</h2>
+  <p>Think of the sea. On the <strong>surface</strong> you see waves: the daily returns, the ups and downs of the price. Underneath is the <strong>undertow</strong>, a current you can’t see that decides how big the waves tend to be. That current is volatility. A strong current means big waves; a weak one means small waves. Undertow watches the waves and infers the current.</p>
+  <p>Two simple assumptions power it:</p>
+  <ul>
+    <li><strong>The current changes slowly.</strong> Today’s volatility is close to yesterday’s, plus a small random nudge. Calm periods tend to stay calm; stormy ones tend to stay stormy. This is what lets the filter learn from past days.</li>
+    <li><strong>Each day’s move is random, scaled by the current.</strong> The stronger the current, the larger the typical move. A large move is evidence of a strong current, but not proof.</li>
+  </ul>
+  <p>A single day is noisy evidence, so Undertow never gives one confident number. It keeps a <strong>range of possibilities</strong> and how likely each is, which is why the screen shows bands and clouds, not just a line.</p>
+</section>
+
+<section id="how">
+  <span class="kicker mono" role="heading" aria-level="2"><i>03</i>How it works</span>
+  <p>Imagine sending out <strong>1,000 scouts</strong>, each carrying a different guess about how stormy the market is right now. These scouts are called <strong>particles</strong>. Every day they repeat three steps:</p>
+  <div class="steps">
+    <div class="step"><span class="n">STEP 01</span><h4>Predict</h4><p>Each scout moves forward one day. Because the current changes slowly, each guess drifts only a little, plus a small random nudge. The swarm spreads out slightly, reflecting new uncertainty.</p></div>
+    <div class="step"><span class="n">STEP 02</span><h4>Weight</h4><p>Today’s price move arrives. Each scout is scored on how believable that move would be <em>if its guess were true</em>. A huge move favours “stormy” scouts; a tiny move favours “calm” ones. Good fits get a high weight.</p></div>
+    <div class="step"><span class="n">STEP 03</span><h4>Resample</h4><p>If only a few scouts are doing most of the work, the swarm is wasteful. Poor fits are dropped and good fits are copied, restoring a full, useful swarm. This happens only when needed, and it is the core of particle filtering.</p></div>
+  </div>
+  <p>After the weighting step, the swarm <em>is</em> the answer. The weighted average of the guesses is the headline volatility number. The spread of the guesses gives the bands: where the swarm is tight, the filter is confident; where it’s wide, it isn’t.</p>
+  <h3>Why not just use a formula?</h3>
+  <p>Simple heuristics, such as the standard deviation of the last 20 days, are slow to detect changes and give no measure of uncertainty. A particle filter instead uses an explicit model of how volatility evolves, so it adapts quickly to moderate changes and reports its estimation uncertainty. It is slower after very large, sudden jumps unless it is given a way to expect them (see the scorecard). It also handles the model’s intractable mathematics, which has no closed-form solution.</p>
+</section>
+
+<section id="screen">
+  <span class="kicker mono" role="heading" aria-level="2"><i>04</i>Reading the screen</span>
+  <p>The demo has five panels, numbered <code>00</code> to <code>04</code>, plus a readout column and a one-line caption. Each panel is named for what it shows, with its sea-themed name in brackets. Volatility is shown as an <strong>annualised percentage</strong>: roughly how much the price would move over a year at the current pace. Calm markets typically sit around 10-15%; crises can exceed 60%.</p>
+  <dl>
+    <div class="row"><dt>Caption<small>top of the page</small></dt><dd>One line that narrates the current day: how big the return was (in units of the previous day’s estimate, σ̂), whether the weighting favoured high-vol or low-vol particles, how the estimate changed, and whether the particles were resampled. For example: “Day 143: return was 3.1σ̂ → high-vol particles gained weight → estimate rose 18.0% → 24.0%, resampled.” Step through a few days and it explains the whole method.</dd></div>
+    <div class="row"><dt>00 Posterior density<small>sea state</small></dt><dd>Each ridge is the filter’s belief about volatility on one day, for the last 64 days. The oldest day is at the back and today is in front. The horizontal axis is the volatility level. A tall, narrow ridge means the filter is confident; a low, wide one means it is uncertain. Ridges shift right as volatility rises. The cross marks the current estimate (σ̂), and short coral ticks mark shock days.</dd></div>
+    <div class="row"><dt>Filtered vol</dt><dd>The current volatility estimate, as an annualised percentage, with the change since the previous day beside it (coral = up, green = down). The line below reads “rising”, “falling” or “steady” based on the change over the last five days.</dd></div>
+    <div class="row"><dt>Readout table</dt><dd><ul>
+      <li><strong>90% band (low / high):</strong> the range containing volatility with 90% probability.</li>
+      <li><strong>ESS / N:</strong> effective sample size relative to the particle count, i.e. how many particles are contributing meaningfully (see Glossary).</li>
+      <li><strong>Resamples:</strong> number of times the particles have been resampled so far.</li>
+      <li><strong>Return r_t:</strong> the current day’s actual price move.</li>
+      <li><strong>Move |r_t|/σ̂:</strong> the current move relative to the previous day’s estimate. Values above 3 are surprises.</li>
+      <li><strong>Err vs 20d std / EWMA / GARCH:</strong> the filter’s average error relative to each baseline, measured against the reference line (below). Negative means the filter is closer to it.</li>
+      <li><strong>True vol</strong> (simulated) or <strong>Realized, next 5d</strong> (real data): the reference the errors are measured against. Realized volatility is hindsight: the actual volatility of the following five days.</li>
+      <li><strong>VIX</strong> (real data only): the market’s own implied volatility, for comparison.</li>
+    </ul></dd></div>
+    <div class="row"><dt>01 Price and returns<small>surface</small></dt><dd>The price, with a shaded ±2σ envelope: the range expected to contain the next day’s price about 95% of the time. Below it, daily returns appear as columns; coral columns exceed 3σ, which the filter did not expect. The fan on the right shows 60 simulated paths over the next 20 days at the current volatility estimate: plausible spread, not a prediction.</dd></div>
+    <div class="row"><dt>02 Volatility estimate<small>undercurrent</small></dt><dd>The core of the demo: the filter’s volatility estimate over time. The bold white line is the median, the dotted bands are the 50% and 90% credible intervals, and the speckles are random draws from the filter’s belief for that day (the distribution the particles approximate). The comparison lines are the filter’s competition: <strong>dashed white</strong> is the true volatility (simulated data) or the realized volatility of the next five days (real data); <strong>purple</strong> is EWMA; <strong>gold dash-dot</strong> is GARCH(1,1); <strong>blue</strong> is the 20-day rolling standard deviation (the weakest baseline, off by default); <strong>pink dotted</strong> is the VIX (real data).</dd></div>
+    <div class="row"><dt>03 Particle health<small>soundings</small></dt><dd>A diagnostic for the particle filter: bars show the effective sample size as a fraction of the particle count (1.0 = all particles contribute equally). When it drops below the dotted 0.5 line, the particles are resampled and that bar turns green. Dips usually follow surprising price moves.</dd></div>
+    <div class="row"><dt>04 Particle cloud<small>shoal</small></dt><dd>The particles for the current day, as dots along the volatility axis, stepping through <strong>predict</strong> (particles move under the model), <strong>weight</strong> (the vertical line is the current return, the dotted curve is its likelihood at each volatility, and dot size scales with weight) and <strong>resample</strong> (low-weight particles are replaced by copies of high-weight ones; marked as skipped if ESS stayed above threshold). At most 280 particles are drawn.</dd></div>
+  </dl>
+</section>
+
+<section id="controls">
+  <span class="kicker mono"><i>05</i>User guide</span>
+  <h2>Using the controls</h2>
+  <p>The demo opens on a title screen. Click <strong>Enter →</strong> (or press Enter or Space) to start; it then autoplays, unless your device requests reduced motion, in which case it stays paused until you press Play. Controls are in the right-hand column (below the charts on a phone).</p>
+  <dl>
+    <div class="row"><dt>Play / Pause<small>or press Space</small></dt><dd>Starts and stops the replay. Time loops back to day 70 when it reaches the end.</dd></div>
+    <div class="row"><dt>Step →<small>or press →</small></dt><dd>Advances exactly one day, with a full animated predict, weight and resample cycle, and the caption narrating it. Best for understanding what happens in a single day.</dd></div>
+    <div class="row"><dt>Reset</dt><dd>Jumps back to day 70.</dd></div>
+    <div class="row"><dt>Why day 70?</dt><dd>The first 70 days are <strong>warm-up</strong> (burn-in). The filter starts from a vague guess about volatility and needs a few weeks of returns to settle, and the sea-state surface needs 64 days of history to fill. In the real-data preset the warm-up is October to December 2018, and playback starts on 14 February 2020, just before the crash.</dd></div>
+    <div class="row"><dt>Drift speed</dt><dd>How fast time plays, from 0.5 to 12 days per second.</dd></div>
+    <div class="row"><dt>Calm · 2008 · 2020</dt><dd>Preset storylines on simulated data. <strong>Calm</strong>: no shocks, a flat sea. <strong>2008</strong>: two moderate jumps in volatility (a long swell). <strong>2020</strong>: one large sudden jump (a squall). They are inspired by those eras, but the data are simulated, not the real history.</dd></div>
+    <div class="row"><dt>Real: SPY 2020</dt><dd>Actual daily returns of the SPY fund (it tracks the US S&amp;P 500) from October 2018 to December 2020, including the March 2020 crash. The filter’s settings and GARCH’s are estimated on 2010-2018 only, so this period is out of sample. True volatility doesn’t exist for real data, so panel 02 shows the realized volatility of the next five days (hindsight) and the VIX instead. Shocks and the simulated-truth sliders are disabled.</dd></div>
+    <div class="row"><dt>Add a shock<small>rogue wave</small></dt><dd>Injects a sudden volatility jump the next day, about a 2x rise, that then fades slowly. Use it to test how fast the filter notices a shock. Simulated data only.</dd></div>
+    <div class="row"><dt>20-day drift forecast</dt><dd>Shows or hides the fan of imagined future prices in panel 01.</dd></div>
+    <div class="row"><dt>Overlays</dt><dd>Shows or hides the comparison lines in panel 02: the true (or realized) volatility, the 20-day rolling standard deviation, EWMA, GARCH, and the VIX on real data.</dd></div>
+    <div class="row"><dt>φ persistence<small>filter assumes</small></dt><dd>How strongly the filter believes volatility is "sticky" from day to day. High means slow-changing; low means it can change quickly.</dd></div>
+    <div class="row"><dt>σ_η vol of vol<small>filter assumes</small></dt><dd>How much the filter thinks volatility itself jumps around. Low means calm and steady; high means restless.</dd></div>
+    <div class="row"><dt>Particles N</dt><dd>How many scouts: 100, 250, 500, 1,000, 2,500 or 5,000. More scouts give a smoother, more reliable answer but need more computing. The dots shown stay capped at 280.</dd></div>
+    <div class="row"><dt>Jump component</dt><dd>Gives the filter a small daily chance that volatility jumps, so a sudden large rise is plausible rather than nearly impossible. It adapts faster to shocks and costs little when none arrive.</dd></div>
+    <div class="row"><dt>Student-t noise</dt><dd>Lets returns have fatter tails than a bell curve, so a single huge return isn’t over-interpreted. The fitted setting is close to a bell curve, so the effect is small on SPY.</dd></div>
+    <div class="row"><dt>True φ and σ_η<small>simulated data</small></dt><dd>Set how the simulated market really behaves, independently of what the filter assumes. Drag the data one way and the filter the other to create misspecification in either direction. Disabled for real data.</dd></div>
+  </dl>
+  <div class="callout"><span class="mono">Good to know</span><p>The <strong>filter</strong> sliders change what the filter believes; the <strong>data</strong> sliders change the simulated market. By default they match (φ = 0.97, σ_η = 0.15), the best case. On real data the filter uses φ = 0.94 and σ_η = 0.35, estimated from SPY in 2010-2018. EWMA and GARCH use fixed settings (EWMA 0.94; GARCH fitted offline), so they don’t follow the sliders.</p></div>
+</section>
+
+<section id="try">
+  <span class="kicker mono" role="heading" aria-level="2"><i>06</i>Things to try</span>
+  <ol class="tryit">
+    <li><div><strong>Watch one day in slow motion.</strong> Press Pause, then press Step → a few times and read the caption while watching panel 04. Dots grow when they fit the day’s return, and the cloud tightens after resampling.</div></li>
+    <li><div><strong>Test the reaction time.</strong> Press Add a shock, then play. The dashed true-volatility line jumps immediately. Count how many days the filter takes to catch up, and compare with EWMA and GARCH.</div></li>
+    <li><div><strong>See the effect of particle count.</strong> Set Particles N to 100, then to 5,000. At 100 the estimate is jittery and the bands are ragged; at 5,000 it is smooth. More particles means less Monte Carlo noise.</div></li>
+    <li><div><strong>Misspecify the model in either direction.</strong> Set the filter’s σ_η to 0.05 while the data stay at 0.15: the filter becomes sluggish and overconfident. Then restore it and raise the <em>data’s</em> true σ_η to 0.35 instead: the market becomes restless and a filter that expects calm falls behind.</div></li>
+    <li><div><strong>Compare the scenarios.</strong> Switch between Calm, 2008 and 2020 and play each. After the large 2020 jump the plain filter lags for several days. Now tick Jump component and replay: it catches up faster.</div></li>
+    <li><div><strong>Meet a real market.</strong> Choose Real: SPY 2020 and play through the March 2020 crash. Compare the filter with GARCH, EWMA and the VIX. Then tick Jump component and see how the peak estimate changes. The realized-volatility line is hindsight, so read it as a rough guide, not the truth.</div></li>
+  </ol>
+</section>
+
+<section id="good">
+  <span class="kicker mono"><i>07</i>How well it works</span>
+  <h2>An honest scorecard</h2>
+  <p>The figures below are measured, not assumed. The README has the full tables.</p>
+  <ul>
+    <li><strong>It matches theory.</strong> The filter’s error falls in proportion to 1/√N, where N is the number of particles. Quadrupling the particle count roughly halves the noise.</li>
+    <li><strong>Its settings can be estimated.</strong> Fitting φ and σ_η by maximum likelihood on SPY in 2010-2018 gave φ = 0.94 and σ_η = 0.35 (the real-data preset uses them), well away from the hand-set 0.97 and 0.15. On the held-out years 2019-2024 the likelihood rose by about 9.</li>
+    <li><strong>On simulated data that match its model</strong>, with no shock, it is clearly more accurate than GARCH (an industry-standard model) and slightly more accurate than EWMA and the 20-day standard deviation, though those gaps are within the noise.</li>
+    <li><strong>After a very large sudden jump</strong> (+1.5 in log-variance, about a 2x rise), the plain filter trails GARCH by about three standard errors. Its prior treats such a jump as nearly impossible, so it takes several days to adjust, and adding particles doesn’t fix that. <strong>A jump component closes the gap</strong>: the jump variant is level with GARCH and better than the plain filter on 72 of 100 paths. It costs a little when no shock arrives.</li>
+    <li><strong>On real SPY returns, out of sample</strong> (fitted on 2010-2018, tested on 2019-2024), it is significantly better than the 20-day standard deviation (Diebold-Mariano test, p = 0.003), borderline against EWMA (p = 0.064), and statistically indistinguishable from GARCH (p = 0.095, with GARCH nominally ahead).</li>
+    <li><strong>In the March 2020 crash</strong> the jump variant improves on the plain filter (p = 0.036 on that window, which is only about 100 days). Student-t noise adds little on SPY.</li>
+    <li><strong>The browser matches the Python.</strong> On the same data, the in-page filter and the Python implementation agree to within about 1% on average at 1,000 particles (worst single day: about 3-5%), consistent with sampling noise. This holds for the plain filter and both robust variants.</li>
+  </ul>
+</section>
+
+<section id="limits">
+  <span class="kicker mono"><i>08</i>Limits</span>
+  <h2>Known limitations</h2>
+  <ul>
+    <li><strong>Simple model.</strong> By default returns are assumed to be Gaussian, but real markets have fatter tails, so large moves are treated as rarer than they are. The Student-t option helps in principle, but the fit only weakly prefers it on SPY.</li>
+    <li><strong>No leverage effect.</strong> In real markets, falling prices tend to be followed by higher volatility. The model treats return shocks and volatility shocks as independent.</li>
+    <li><strong>Settings are estimated once.</strong> φ, σ_η and the average level were fitted on 2010-2018 on a coarse grid and then held fixed. There is no re-estimation and no uncertainty on them.</li>
+    <li><strong>The jump settings aren’t pinned down by the data.</strong> SPY’s likelihood is flat across rare-jump settings, so the jump’s size and frequency are a modelling choice.</li>
+    <li><strong>Scoring on real data is approximate.</strong> True volatility is unobservable, so methods are scored against noisy proxies. The significance tests allow for that noise, but the crash window is small.</li>
+    <li><strong>The baselines are fixed.</strong> EWMA uses 0.94 and GARCH uses offline-fitted settings, so neither follows the sliders. The realized-volatility line on real data uses the following five days.</li>
+    <li><strong>Not advice.</strong> The filter estimates current and past volatility. It does not predict returns or recommend trades.</li>
+  </ul>
+</section>
+
+<section id="words">
+  <span class="kicker mono" role="heading" aria-level="2"><i>09</i>Glossary</span>
+  <dl>
+    <div class="row"><dt>Return</dt><dd>Daily percentage price change (log returns, nearly identical for small moves).</dd></div>
+    <div class="row"><dt>Volatility</dt><dd>Typical size of daily returns.</dd></div>
+    <div class="row"><dt>Annualised</dt><dd>Volatility restated as a yearly figure so values are comparable: daily volatility × √252 ≈ 15.9, where 252 is the number of trading days per year. A 1% daily volatility is about 16% annualised.</dd></div>
+    <div class="row"><dt>Realized volatility</dt><dd>The volatility that actually occurred, measured from returns after the fact. Here: the volatility of the next five days. It is hindsight, and a noisy stand-in for the true volatility.</dd></div>
+    <div class="row"><dt>VIX</dt><dd>An index of the volatility that S&amp;P 500 options imply for the next 30 days, quoted as an annualised percentage. It reflects market expectations.</dd></div>
+    <div class="row"><dt>Hidden state</dt><dd>A quantity that exists but cannot be observed directly. Here, it is the current volatility, stored as its logarithm (log-variance) so it stays above zero.</dd></div>
+    <div class="row"><dt>Particle</dt><dd>One candidate value of the hidden volatility.</dd></div>
+    <div class="row"><dt>Weight</dt><dd>How well a particle explains the current return.</dd></div>
+    <div class="row"><dt>Resampling</dt><dd>Replacing low-weight particles with copies of high-weight ones, resetting weights to equal.</dd></div>
+    <div class="row"><dt>ESS</dt><dd>The number of equally weighted particles the weighted set is worth; near 1 if one particle dominates. Shown as a fraction of N.</dd></div>
+    <div class="row"><dt>Warm-up</dt><dd>The first days of a run, before the filter has settled. It starts from a vague guess about volatility, so early estimates are not reliable (also called burn-in).</dd></div>
+    <div class="row"><dt>Posterior</dt><dd>The filter’s belief after seeing the data; the particles approximate it.</dd></div>
+    <div class="row"><dt>90% band</dt><dd>The 90% credible interval; the narrower, the more confident.</dd></div>
+    <div class="row"><dt>Shock</dt><dd>A sudden jump in volatility. Shock days get coral ticks: the days you inject on simulated data, or days with a return beyond 4σ̂ on real data. Separately, returns beyond 3σ̂ are drawn as coral columns.</dd></div>
+    <div class="row"><dt>Jump component</dt><dd>An extra term that gives volatility a small daily chance of a sudden jump, making shocks plausible to the filter.</dd></div>
+    <div class="row"><dt>Student-t noise</dt><dd>Returns noise with fatter tails than a bell curve, so extreme returns are less surprising.</dd></div>
+    <div class="row"><dt>Rolling std</dt><dd>Standard deviation of the last 20 returns.</dd></div>
+    <div class="row"><dt>EWMA</dt><dd>Exponentially weighted moving average: today’s variance estimate is 94% yesterday’s plus 6% of today’s squared return.</dd></div>
+    <div class="row"><dt>GARCH</dt><dd>Generalized Autoregressive Conditional Heteroskedasticity: a standard model that updates volatility from the previous day’s volatility and return.</dd></div>
+    <div class="row"><dt>Out of sample</dt><dd>Tested on data not used to choose the settings. Here: settings fitted on 2010-2018, scored on 2019-2024.</dd></div>
+    <div class="row"><dt>Diebold-Mariano test</dt><dd>A statistical test of whether two forecasting methods differ in accuracy by more than chance. A small p-value (such as under 0.05) means the difference is unlikely to be luck.</dd></div>
+    <div class="row"><dt>φ</dt><dd>Persistence: the fraction of the previous day’s log-variance carried forward.</dd></div>
+    <div class="row"><dt>σ_η</dt><dd>Vol of vol: the standard deviation of the daily change in log-variance.</dd></div>
+  </dl>
+</section>
+
+<section id="tech">
+  <span class="kicker mono"><i>10</i>Under the sea</span>
+  <h2>For the technically curious</h2>
+  <details open><summary>Model</summary>
+    <p>The demo uses a stochastic volatility (SV) model. The latent log-variance <code>h_t</code> follows a mean-reverting AR(1) process, and returns are conditionally Gaussian given <code>h_t</code>:</p>
+    <pre class="eq">h_t = μ + φ (h_{t-1} − μ) + σ_η · η_t
+r_t = exp(h_t / 2) · ε_t
+η_t, ε_t ~ N(0, 1), independent</pre>
+    <table class="cmp">
+      <thead><tr><th>Parameter</th><th>Meaning</th><th>Simulated default</th><th>Fitted on SPY 2010-18</th></tr></thead>
+      <tbody>
+        <tr><td>μ</td><td>long-run mean of log-variance</td><td>−9.2 (≈ 1% daily volatility)</td><td>−9.86</td></tr>
+        <tr><td>φ</td><td>persistence</td><td>0.97</td><td>0.94</td></tr>
+        <tr><td>σ_η</td><td>volatility of log-variance</td><td>0.15</td><td>0.35</td></tr>
+      </tbody>
+    </table>
+    <p>Because η and ε are independent, the model has no leverage effect. The two robust variants change it slightly. <strong>Jump:</strong> each day, with probability 0.003, an extra N(1.5, 0.5²) is added to <code>h_t</code>. <strong>Student-t:</strong> ε_t is Student-t with 20 degrees of freedom, scaled to unit variance. Both sets of numbers were fitted on SPY.</p>
+  </details>
+  <details><summary>Filter</summary>
+    <p>The filter is a bootstrap particle filter with N particles. The initial particles are drawn from the stationary distribution of the AR(1). On each day:</p>
+    <ol>
+      <li><strong>Predict:</strong> propagate each particle through the state equation (plus the jump, if enabled).</li>
+      <li><strong>Weight:</strong> compute the log-likelihood <code>log N(r_t; 0, exp(h))</code> per particle (or its Student-t counterpart), then normalise the weights in log space for numerical stability.</li>
+      <li><strong>Resample:</strong> if ESS &lt; N/2, apply systematic resampling and reset the weights to 1/N.</li>
+    </ol>
+    <p>Per-day output: the filtered mean, the 5/25/50/75/95% quantiles of volatility, ESS, and the log-likelihood increment log p(r_t | r_1:t−1). The sum of the increments estimates the likelihood of the whole series, which is what the parameter fit maximises.</p>
+  </details>
+  <details><summary>Parameter estimation and evaluation</summary>
+    <p>φ, σ_η and μ are chosen by grid search on that likelihood estimate, using 2010-2018 only: a coarse grid with one seed, then the best cells re-scored with more seeds because the estimate is noisy. The 2019-2024 years are held out. GARCH(1,1) is fitted with the <code>arch</code> package on the same training years, and the demo then runs its recursion directly. Forecasts for the next day are scored with QLIKE against the next day’s squared return and with absolute error against the next five days’ realized volatility, and compared with Diebold-Mariano tests using a Newey-West long-run variance.</p>
+  </details>
+  <details><summary>Demo implementation notes</summary>
+    <ul>
+      <li><strong>Ridges:</strong> a lightly smoothed, weighted histogram of the particles on a log-volatility grid.</li>
+      <li><strong>Particle strip:</strong> a snapshot of up to 280 particles at each step (predict, weight, resample) of the filter’s actual run. Resampling parent indices come from the real systematic resampling.</li>
+      <li><strong>Caption:</strong> built from the run itself: the return in units of the previous day’s estimate, the change between the mean volatility before and after weighting, the change in the estimate, and whether resampling happened.</li>
+      <li><strong>Fan chart:</strong> 60 simulated price paths over 20 days. Each path uses the filter’s one-day-ahead variance forecast and holds it fixed for all 20 days. The model itself lets volatility drift back toward its long-run level and wander randomly, so the fan is too wide after a volatility spike, too narrow after a calm spell (in the default model, roughly 20% too wide after a very large spike and 15% too narrow after a calm one), and has thinner tails than the model implies. Treat it as an illustration of plausible spread, not a calibrated forecast.</li>
+      <li><strong>Real data:</strong> SPY daily log returns from October 2018 to December 2020, with the VIX. The first months are warm-up. GARCH’s recursion starts from its unconditional variance at the start of the window rather than from 2010, which only matters during that warm-up.</li>
+      <li><strong>Baselines:</strong> EWMA (0.94) and GARCH are computed in the page. For simulated data the GARCH settings were fitted offline on long simulated paths from the default model; for real data, on SPY 2010-2018.</li>
+    </ul>
+  </details>
+  <details><summary>Verification</summary>
+    <p>The Python package has unit tests for weight normalisation, resampling counts, reproducibility, the Student-t density, the GARCH recursion, the Diebold-Mariano test, error shrinking with N, and behaviour after a shock. The browser filter is checked against the Python filter on identical input, for the plain filter and both variants: the relative RMS error of the filtered mean is about 0.9-1.1% at N = 1,000 and about 0.4-0.5% at N = 5,000, and the log-likelihoods agree to within 0.1.</p>
+  </details>
+  <p style="margin-top:18px">Source code, results tables, analysis scripts and the Python package are in the <a href="https://github.com/sofiaksoder/undertow">GitHub repository</a>.</p>
+</section>
+
+<footer>
+  <span class="mono">Undertow · Subsurface market volatility</span>
+  <a class="btn primary" href="index.html">Open the demo →</a>
+</footer>
+
+</div></div>
+</body>
+</html>

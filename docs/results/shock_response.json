@@ -1,0 +1,296 @@
+{
+  "days": 1050,
+  "shock_day": 1000,
+  "garch_fit_days": 950,
+  "particles": 2000,
+  "paths": 100,
+  "window_days_after_shock": 15,
+  "jump": {
+    "prob": 0.003,
+    "mean": 1.5,
+    "std": 0.5
+  },
+  "dof": 20.0,
+  "errors_in_daily_vol_by_shock_size": {
+    "0.0": {
+      "Particle filter": {
+        "mae": 0.0016018880375994642,
+        "mae_se": 8.311464329023403e-05,
+        "rmse": 0.0018595535584268218,
+        "mae_minus_garch": -0.00017539594158166375,
+        "mae_minus_garch_se": 4.476676711476087e-05,
+        "better_than_garch_on_paths": 65
+      },
+      "PF + jump": {
+        "mae": 0.0016712159243968008,
+        "mae_se": 8.765345055988298e-05,
+        "rmse": 0.0019332687053335415,
+        "mae_minus_plain_pf": 6.932788679733593e-05,
+        "mae_minus_plain_pf_se": 1.9612453535590304e-05,
+        "better_than_plain_pf_on_paths": 30,
+        "mae_minus_garch": -0.0001060680547843278,
+        "mae_minus_garch_se": 4.1428691375496875e-05,
+        "better_than_garch_on_paths": 58
+      },
+      "PF + Student-t": {
+        "mae": 0.0016278589792784062,
+        "mae_se": 8.237517819364929e-05,
+        "rmse": 0.0018807712949865882,
+        "mae_minus_plain_pf": 2.597094167894127e-05,
+        "mae_minus_plain_pf_se": 1.0122589482015754e-05,
+        "better_than_plain_pf_on_paths": 45,
+        "mae_minus_garch": -0.00014942499990272247,
+        "mae_minus_garch_se": 4.244779863276609e-05,
+        "better_than_garch_on_paths": 64
+      },
+      "PF + jump + t": {
+        "mae": 0.0016815366313654562,
+        "mae_se": 8.519893390855615e-05,
+        "rmse": 0.0019384868116667884,
+        "mae_minus_plain_pf": 7.964859376599168e-05,
+        "mae_minus_plain_pf_se": 1.9381978105670736e-05,
+        "better_than_plain_pf_on_paths": 34,
+        "mae_minus_garch": -9.574734781567206e-05,
+        "mae_minus_garch_se": 3.91131688001741e-05,
+        "better_than_garch_on_paths": 59
+      },
+      "Rolling std (20d)": {
+        "mae": 0.0017232563340643578,
+        "mae_se": 0.00010925380519440306,
+        "rmse": 0.0019799480588078445,
+        "mae_minus_plain_pf": 0.00012136829646489329,
+        "mae_minus_plain_pf_se": 7.808070298464884e-05,
+        "better_than_plain_pf_on_paths": 47,
+        "mae_minus_garch": -5.4027645116770465e-05,
+        "mae_minus_garch_se": 7.881963747426004e-05,
+        "better_than_garch_on_paths": 55
+      },
+      "EWMA (0.94)": {
+        "mae": 0.0016135214504076813,
+        "mae_se": 0.00010026430457423915,
+        "rmse": 0.0018589461872808475,
+        "mae_minus_plain_pf": 1.1633412808216555e-05,
+        "mae_minus_plain_pf_se": 5.149594746916e-05,
+        "better_than_plain_pf_on_paths": 57,
+        "mae_minus_garch": -0.00016376252877344725,
+        "mae_minus_garch_se": 6.243148338085552e-05,
+        "better_than_garch_on_paths": 58
+      },
+      "GARCH(1,1)": {
+        "mae": 0.0017772839791811278,
+        "mae_se": 9.057523688261057e-05,
+        "rmse": 0.0020376292667532974
+      }
+    },
+    "0.5": {
+      "Particle filter": {
+        "mae": 0.002138741638746515,
+        "mae_se": 0.00012670577100745944,
+        "rmse": 0.0024831683295199213,
+        "mae_minus_garch": -3.94076164134188e-05,
+        "mae_minus_garch_se": 4.380471990558537e-05,
+        "better_than_garch_on_paths": 58
+      },
+      "PF + jump": {
+        "mae": 0.002164879107739236,
+        "mae_se": 0.00012992357387745751,
+        "rmse": 0.002507357152938894,
+        "mae_minus_plain_pf": 2.6137468992721443e-05,
+        "mae_minus_plain_pf_se": 3.941237945414965e-05,
+        "better_than_plain_pf_on_paths": 51,
+        "mae_minus_garch": -1.3270147420697343e-05,
+        "mae_minus_garch_se": 4.2698206627892216e-05,
+        "better_than_garch_on_paths": 56
+      },
+      "PF + Student-t": {
+        "mae": 0.0021259123301440052,
+        "mae_se": 0.00012637202301968428,
+        "rmse": 0.0024615135607247603,
+        "mae_minus_plain_pf": -1.2829308602509866e-05,
+        "mae_minus_plain_pf_se": 1.3854022374014654e-05,
+        "better_than_plain_pf_on_paths": 56,
+        "mae_minus_garch": -5.223692501592867e-05,
+        "mae_minus_garch_se": 4.603542537001604e-05,
+        "better_than_garch_on_paths": 59
+      },
+      "PF + jump + t": {
+        "mae": 0.002112913964789117,
+        "mae_se": 0.00012208205437872125,
+        "rmse": 0.0024562202972936167,
+        "mae_minus_plain_pf": -2.5827673957397443e-05,
+        "mae_minus_plain_pf_se": 3.202981798707504e-05,
+        "better_than_plain_pf_on_paths": 56,
+        "mae_minus_garch": -6.523529037081625e-05,
+        "mae_minus_garch_se": 3.8604959560373554e-05,
+        "better_than_garch_on_paths": 57
+      },
+      "Rolling std (20d)": {
+        "mae": 0.0022667209090043894,
+        "mae_se": 0.00012394354291946603,
+        "rmse": 0.002627687906386308,
+        "mae_minus_plain_pf": 0.00012797927025787458,
+        "mae_minus_plain_pf_se": 8.111833110353306e-05,
+        "better_than_plain_pf_on_paths": 48,
+        "mae_minus_garch": 8.857165384445581e-05,
+        "mae_minus_garch_se": 8.076226511811747e-05,
+        "better_than_garch_on_paths": 45
+      },
+      "EWMA (0.94)": {
+        "mae": 0.0021721936502884067,
+        "mae_se": 0.0001240419530260135,
+        "rmse": 0.00252637059142502,
+        "mae_minus_plain_pf": 3.345201154189155e-05,
+        "mae_minus_plain_pf_se": 5.1613721132890146e-05,
+        "better_than_plain_pf_on_paths": 43,
+        "mae_minus_garch": -5.9556048715272354e-06,
+        "mae_minus_garch_se": 5.516880305148876e-05,
+        "better_than_garch_on_paths": 44
+      },
+      "GARCH(1,1)": {
+        "mae": 0.002178149255159934,
+        "mae_se": 0.00012646237480509146,
+        "rmse": 0.002522413504253235
+      }
+    },
+    "1.0": {
+      "Particle filter": {
+        "mae": 0.0033791164381759917,
+        "mae_se": 0.00019008665282958372,
+        "rmse": 0.003950107068989924,
+        "mae_minus_garch": 0.00011085313132276033,
+        "mae_minus_garch_se": 6.002563830388937e-05,
+        "better_than_garch_on_paths": 41
+      },
+      "PF + jump": {
+        "mae": 0.003328267796058173,
+        "mae_se": 0.0001877583921507789,
+        "rmse": 0.003888692793717592,
+        "mae_minus_plain_pf": -5.0848642117819045e-05,
+        "mae_minus_plain_pf_se": 7.190061908877565e-05,
+        "better_than_plain_pf_on_paths": 63,
+        "mae_minus_garch": 6.0004489204941276e-05,
+        "mae_minus_garch_se": 5.684123231862701e-05,
+        "better_than_garch_on_paths": 46
+      },
+      "PF + Student-t": {
+        "mae": 0.0033926234152712896,
+        "mae_se": 0.0001953172963514125,
+        "rmse": 0.003951392350834032,
+        "mae_minus_plain_pf": 1.3506977095298162e-05,
+        "mae_minus_plain_pf_se": 1.9170915294720846e-05,
+        "better_than_plain_pf_on_paths": 52,
+        "mae_minus_garch": 0.0001243601084180585,
+        "mae_minus_garch_se": 6.826383612818754e-05,
+        "better_than_garch_on_paths": 44
+      },
+      "PF + jump + t": {
+        "mae": 0.0032533772107152803,
+        "mae_se": 0.00017669257707958865,
+        "rmse": 0.003817920112526621,
+        "mae_minus_plain_pf": -0.0001257392274607114,
+        "mae_minus_plain_pf_se": 5.5352787718618586e-05,
+        "better_than_plain_pf_on_paths": 71,
+        "mae_minus_garch": -1.4886096137951073e-05,
+        "mae_minus_garch_se": 4.862134919092485e-05,
+        "better_than_garch_on_paths": 50
+      },
+      "Rolling std (20d)": {
+        "mae": 0.0035411249321382543,
+        "mae_se": 0.00016798527312091447,
+        "rmse": 0.004127681931863443,
+        "mae_minus_plain_pf": 0.00016200849396226193,
+        "mae_minus_plain_pf_se": 9.240201919269588e-05,
+        "better_than_plain_pf_on_paths": 37,
+        "mae_minus_garch": 0.00027286162528502233,
+        "mae_minus_garch_se": 8.69890363810623e-05,
+        "better_than_garch_on_paths": 37
+      },
+      "EWMA (0.94)": {
+        "mae": 0.0034411181709116433,
+        "mae_se": 0.00017611663872526097,
+        "rmse": 0.004029432121298831,
+        "mae_minus_plain_pf": 6.200173273565216e-05,
+        "mae_minus_plain_pf_se": 6.19480916005274e-05,
+        "better_than_plain_pf_on_paths": 44,
+        "mae_minus_garch": 0.00017285486405841248,
+        "mae_minus_garch_se": 6.416979670160558e-05,
+        "better_than_garch_on_paths": 37
+      },
+      "GARCH(1,1)": {
+        "mae": 0.003268263306853231,
+        "mae_se": 0.000187396991246713,
+        "rmse": 0.003831420510717999
+      }
+    },
+    "1.5": {
+      "Particle filter": {
+        "mae": 0.005142185872474678,
+        "mae_se": 0.0002711283900865656,
+        "rmse": 0.006064119292466795,
+        "mae_minus_garch": 0.00030066194379150526,
+        "mae_minus_garch_se": 8.973105392628915e-05,
+        "better_than_garch_on_paths": 36
+      },
+      "PF + jump": {
+        "mae": 0.00484613264383763,
+        "mae_se": 0.0002526364062135669,
+        "rmse": 0.005756277640212324,
+        "mae_minus_plain_pf": -0.00029605322863704604,
+        "mae_minus_plain_pf_se": 0.00012579711486780827,
+        "better_than_plain_pf_on_paths": 72,
+        "mae_minus_garch": 4.608715154459162e-06,
+        "mae_minus_garch_se": 8.666006512265022e-05,
+        "better_than_garch_on_paths": 51
+      },
+      "PF + Student-t": {
+        "mae": 0.005271557728076906,
+        "mae_se": 0.0002805342474593613,
+        "rmse": 0.006167577483911367,
+        "mae_minus_plain_pf": 0.00012937185560222837,
+        "mae_minus_plain_pf_se": 3.066711350596278e-05,
+        "better_than_plain_pf_on_paths": 36,
+        "mae_minus_garch": 0.0004300337993937336,
+        "mae_minus_garch_se": 0.00010136257983341094,
+        "better_than_garch_on_paths": 33
+      },
+      "PF + jump + t": {
+        "mae": 0.004839201297151354,
+        "mae_se": 0.00024450223393769773,
+        "rmse": 0.005753269796880365,
+        "mae_minus_plain_pf": -0.00030298457532332247,
+        "mae_minus_plain_pf_se": 0.00010466789926784088,
+        "better_than_plain_pf_on_paths": 73,
+        "mae_minus_garch": -2.322631531817259e-06,
+        "mae_minus_garch_se": 6.578117903689093e-05,
+        "better_than_garch_on_paths": 44
+      },
+      "Rolling std (20d)": {
+        "mae": 0.005262038723178598,
+        "mae_se": 0.0002281443177328131,
+        "rmse": 0.00624175590049973,
+        "mae_minus_plain_pf": 0.0001198528507039219,
+        "mae_minus_plain_pf_se": 0.000123155808203677,
+        "better_than_plain_pf_on_paths": 41,
+        "mae_minus_garch": 0.0004205147944954271,
+        "mae_minus_garch_se": 9.572517713972666e-05,
+        "better_than_garch_on_paths": 31
+      },
+      "EWMA (0.94)": {
+        "mae": 0.005154841249004547,
+        "mae_se": 0.00024144897653592592,
+        "rmse": 0.006115073759678511,
+        "mae_minus_plain_pf": 1.2655376529869021e-05,
+        "mae_minus_plain_pf_se": 8.165991851616768e-05,
+        "better_than_plain_pf_on_paths": 40,
+        "mae_minus_garch": 0.0003133173203213742,
+        "mae_minus_garch_se": 7.13285792212969e-05,
+        "better_than_garch_on_paths": 27
+      },
+      "GARCH(1,1)": {
+        "mae": 0.0048415239286831715,
+        "mae_se": 0.0002571049040662229,
+        "rmse": 0.0057575716419510726
+      }
+    }
+  }
+}

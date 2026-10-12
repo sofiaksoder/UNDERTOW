@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>JS vs Python filter parity</title>
+<body style="font:14px ui-monospace,monospace;background:#04070b;color:#e4ece9;padding:16px">
+<h3>Browser filter vs Python filter (same input)</h3>
+<p>Serve the repo root (<code>python3 -m http.server</code>) and open <code>/tests/parity.html</code>.
+Reference: Python filter, N=100,000. The JS filter runs 6 seeds at each N; error should shrink like 1/sqrt(N).
+Checked for the plain filter and both robust variants (jump, Student-t).</p>
+<pre id="out">running...</pre>
+<iframe id="app" src="../web/index.html" style="display:none"></iframe>
+<script>
+document.getElementById('app').addEventListener('load', async () => {
+  const U = document.getElementById('app').contentWindow.undertow;
+  const fx = await fetch('data/parity.json').then(r => r.json());
+  const ret = Float64Array.from(fx.returns), lines = [];
+  const opts = {plain: {}, jump: {jump: fx.jump}, t: {dof: fx.dof}};
+  for (const [name, extra] of Object.entries(opts)) {
+    const ref = fx.variants[name];
+    for (const N of [1000, 5000]) {
+      let sq = 0, n = 0, worst = 0, ll = 0;
+      const seeds = [1, 2, 3, 4, 5, 6];
+      for (const seed of seeds) {
+        const f = U.runFilter(ret, {mu: fx.params.mu, phi: fx.params.phi, sig: fx.params.sigma_eta, N, seed, ...extra});
+        ll += f.loglik / seeds.length;
+        f.est.forEach((v, t) => { const e = (v - ref.mean_vol[t]) / ref.mean_vol[t]; sq += e * e; n++; worst = Math.max(worst, Math.abs(e)); });
+      }
+      lines.push(`${name.padEnd(5)} N=${N}: rms rel error of filtered mean ${(100 * Math.sqrt(sq / n)).toFixed(2)}%, worst day ${(100 * worst).toFixed(1)}%, ` +
+        `loglik ${ll.toFixed(2)} (python ${ref.loglik.toFixed(2)})`);
+    }
+  }
+  document.getElementById('out').textContent = lines.join('\n');
+});
+</script>
