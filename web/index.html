@@ -65,6 +65,11 @@ section.band:last-child{border-bottom:0;}
 .step.on .n{color:var(--accent);} .step.on .t{color:var(--ink);}
 .step p{margin:3px 0 0;color:var(--body);text-transform:none;letter-spacing:.01em;font-size:11.5px;line-height:1.55;text-wrap:pretty;}
 .sub{font-family:'Geist Mono',monospace;text-transform:none;}
+#btRows{display:flex;flex-direction:column;}
+.bt{display:grid;grid-template-columns:minmax(0,1fr) 46px 58px 52px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px dotted var(--rule);font-variant-numeric:tabular-nums;}
+.bt.h{color:var(--muted);font-size:9.5px;padding-top:0;} .bt>span:not(:first-child){text-align:right;text-transform:none;}
+.bt .nm{display:flex;align-items:center;gap:8px;min-width:0;} .bt .sw{width:18px;height:0;flex:none;}
+.bt .best{color:var(--accent);}
 @media (max-width:700px){.side{border-left:0;padding-left:0;border-top:1px solid var(--rule);} .num{font-size:60px;}}
 
 /* opening screen */
@@ -116,7 +121,7 @@ section.band:last-child{border-bottom:0;}
 
 <header>
   <div class="brand"><h1>UNDERTOW</h1></div>
-  <a class="guide" href="guide.html">Guide →</a>
+  <span style="display:flex;gap:6px"><a class="guide" href="#backtest">Backtest ↓</a><a class="guide" href="guide.html">Guide →</a></span>
   <div class="meta"><span id="dayLabel"></span><span id="nHead"></span><span id="live"></span></div>
 </header>
 <div class="caption" id="caption" aria-live="off"></div>
@@ -183,6 +188,33 @@ section.band:last-child{border-bottom:0;}
     <span class="muted">HOW IT WORKS</span>
     <div id="steps"></div>
   </div>
+</section>
+
+<section class="band" id="backtest">
+  <div class="chart">
+    <div class="cap"><span><b>05</b> · Volatility targeting · growth of $1, net of costs</span><span id="btRange"></span></div>
+    <div class="cv" style="flex:1 1 220px;min-height:220px"><canvas id="bt1" role="img" aria-label="Growth of one dollar for buy and hold and four volatility-targeted strategies, net of costs"></canvas></div>
+    <div class="cap gap8"><span><b>06</b> · Drawdown · % below the previous peak</span><span>LOWER IS WORSE</span></div>
+    <div class="cv" style="height:110px"><canvas id="bt2" role="img" aria-label="Drawdown of each strategy"></canvas></div>
+    <div class="cap gap8"><span><b>07</b> · Position size · × capital</span><span id="btPosLab"></span></div>
+    <div class="cv" style="height:120px"><canvas id="bt3" role="img" aria-label="Position size of each strategy over time"></canvas></div>
+  </div>
+  <aside class="side">
+    <div class="grp" style="gap:10px">
+      <span class="muted" title="Each strategy holds target ÷ forecast of the same asset (capped at 1.5×, rest in cash). Only the volatility forecast differs.">VOLATILITY TARGET · SAME RULE, FOUR FORECASTS</span>
+      <label><span class="lab"><span>TARGET VOL (ANN.)</span><span id="tgtLab"></span></span><input id="tgt" type="range" min="5" max="20" step="1" value="10"></label>
+      <label><span class="lab"><span>COST PER UNIT TURNOVER</span><span id="costLab"></span></span><input id="cost" type="range" min="0" max="25" step="1" value="5"></label>
+    </div>
+    <div class="grp" style="gap:6px">
+      <span class="muted">SCOREBOARD · SINCE DAY 70</span>
+      <div id="btRows"></div>
+    </div>
+    <div class="grp" style="gap:8px">
+      <span class="muted">WHAT THIS SHOWS</span>
+      <p class="note" id="btNote"></p>
+      <p class="note">Short paths are noisy. On six years of real SPY (see the README) the four forecasts cannot be told apart on Sharpe; the lasting difference is how much each one trades.</p>
+    </div>
+  </aside>
 </section>
 
 </div></div>
@@ -306,7 +338,7 @@ function runFilter(ret,{mu,phi,sig,N,seed,jump=null,dof=null}){
 /* ---------- app state ---------- */
 const $=id=>document.getElementById(id);
 const S={entered:false,playing:false,day:236,speed:3,phi:PHI0,sig:SIG0,phiT:PHI0,sigT:SIG0,nIdx:3,preset:'2020',extra:[],
-  show:{truth:true,roll:false,ewma:true,garch:true,vix:true},forecast:true,jump:false,tnoise:false,phase:'weight'};
+  show:{truth:true,roll:false,ewma:true,garch:true,vix:true},forecast:true,jump:false,tnoise:false,phase:'weight',tgt:10,cost:5};
 const saved={sim:{phi:PHI0,sig:SIG0},real:null};   // each data source keeps its own filter settings
 let D=null,REAL=null,dayF=236.6,drawnDay=-1,stepT=null,reduced=false;
 const isReal=()=>S.preset===REAL_PRESET;
@@ -330,7 +362,7 @@ function buildData(){
   let vm=0;for(const a of [f.q[4],ref,d.garch,d.ewma,vix])if(a)for(let t=0;t<d.T;t++)if(isFinite(a[t]))vm=Math.max(vm,a[t]);
   d.vmax=vm*A*1.05;d.pmin=Math.min(...d.price)*.86;d.pmax=Math.max(...d.price)*1.1;
   d.rmax=Math.max(...Array.from(d.ret,Math.abs));
-  D=d;
+  D=d;d.bt=computeBt(d);
 }
 function rebuild(){buildData();S.day=Math.min(S.day,D.T-1);dayF=Math.min(dayF,D.T-.01);pc=-1;redraw();render();}
 
@@ -448,6 +480,81 @@ function drawCharts(day){
     x.textAlign='center';x.textBaseline='top';x.fillStyle=C.dim;
     for(let t=0;t<D.T+H;t+=50)x.fillText(dateLabel(t,true).toUpperCase(),X(t,w),bot+6);
   }
+  drawBt(day);
+}
+/* ---------- volatility-targeting backtest (same rule as pfvol/backtest.py) ---------- */
+// Every strategy holds w = min(1.5, target / forecast) of the asset and the rest in cash. A forecast made
+// after day t sets the weight held on day t+1; moving the weight costs S.cost bps per unit of turnover.
+const BT_START=70,BT_CAP=1.5;
+const BT=[['bh','Buy and hold',C.dim,'dashed'],['uw','Undertow',C.ink,'solid'],['garch','GARCH(1,1)',C.garch,'dashed'],['roll','Rolling std (20d)',C.roll,'solid'],['ewma','EWMA (0.94)',C.ewma,'solid']];
+function computeBt(d){
+  const T=d.T,td=S.tgt/100/Math.sqrt(252),c=S.cost/1e4;
+  const fc={uw:Float64Array.from(d.f.predVar,Math.sqrt),garch:d.garch,roll:d.roll,ewma:d.ewma};
+  const out={eqMin:1,eqMax:1,ddMin:0};
+  for(const [k] of BT){
+    const pos=new Float64Array(T),net=new Float64Array(T),eq=new Float64Array(T).fill(NaN),dd=new Float64Array(T).fill(NaN),turn=new Float64Array(T);
+    for(let t=1;t<T;t++){const v=k==='bh'?NaN:fc[k][t-1];pos[t]=k==='bh'?1:(isFinite(v)&&v>0?Math.min(BT_CAP,td/v):0);}
+    let e=1,pk=1;
+    for(let t=BT_START;t<T;t++){
+      const prev=t===BT_START?0:pos[t-1];turn[t]=Math.abs(pos[t]-prev);
+      net[t]=pos[t]*Math.expm1(d.ret[t])-(k==='bh'?0:c)*turn[t];
+      e*=1+net[t];pk=Math.max(pk,e);eq[t]=e;dd[t]=e/pk-1;
+      out.eqMin=Math.min(out.eqMin,e);out.eqMax=Math.max(out.eqMax,e);out.ddMin=Math.min(out.ddMin,dd[t]);
+    }
+    out[k]={pos,net,eq,dd,turn};
+  }
+  return out;
+}
+function btStats(day){
+  const bt=D.bt,n=day-BT_START+1,res={n};
+  for(const [k] of BT){
+    const o=bt[k];if(n<20){res[k]=null;continue;}
+    let m=0,q=0,tn=0,lv=0,dd=0;
+    for(let t=BT_START;t<=day;t++){m+=o.net[t];tn+=o.turn[t];lv+=o.pos[t];dd=Math.min(dd,o.dd[t]);}
+    m/=n;for(let t=BT_START;t<=day;t++)q+=(o.net[t]-m)**2;
+    const sd=Math.sqrt(q/(n-1));
+    res[k]={sharpe:sd>0?m/sd*Math.sqrt(252):NaN,dd,turn:tn/n*252,lev:lv/n};
+  }
+  return res;
+}
+const f1=v=>isFinite(v)?v.toFixed(2):'–',fp=v=>(v*100).toFixed(1).replace('-','−')+'%';
+function renderBt(day){
+  if(!D||!D.bt)return;
+  $('tgtLab').textContent=S.tgt+'%';$('costLab').textContent=S.cost+' bps';
+  $('btRange').textContent='DAY '+BT_START+' → '+day;$('btPosLab').textContent=S.tgt+'% TARGET ÷ FORECAST, CAP '+BT_CAP+'×';
+  const st=btStats(day),act=BT.filter(b=>b[0]!=='bh').map(b=>b[0]);
+  const best=(key,sign)=>{let b=null,bv=-Infinity;for(const k of act)if(st[k]&&isFinite(st[k][key])&&sign*st[k][key]>bv){bv=sign*st[k][key];b=k;}return b;};
+  const bs=best('sharpe',1),bd=best('dd',1),bt=best('turn',-1);
+  let h='<div class="bt h"><span></span><span>SHARPE</span><span>MAX DD</span><span>TURN/YR</span></div>';
+  for(const [k,nm,col,dash] of BT){
+    const r=st[k];
+    h+=`<div class="bt"><span class="nm"><span class="sw" style="border-top:1.5px ${dash} ${col}"></span>${nm}</span>`+
+      (r?`<span class="${k===bs?'best':''}">${f1(r.sharpe)}</span><span class="${k===bd?'best':''}">${fp(r.dd)}</span><span class="${k===bt?'best':''}">${r.turn.toFixed(1)}×</span>`:'<span>–</span><span>–</span><span>–</span>')+'</div>';
+  }
+  $('btRows').innerHTML=h;
+  if(!st.uw){$('btNote').textContent='Collecting history: the scoreboard needs 20 days after day '+BT_START+'.';return;}
+  const sh=act.map(k=>st[k].sharpe),lo=Math.min(...sh),hi=Math.max(...sh);
+  const lead=hi-lo<.3?`The four forecasts land within ${f1(hi-lo)} of each other on Sharpe (${f1(lo)} to ${f1(hi)}), a gap this short a path can't separate from luck.`:`${BT.find(b=>b[0]===bs)[1]} leads on Sharpe here (${f1(st[bs].sharpe)}).`;
+  $('btNote').innerHTML=`Buy and hold's worst drop so far is <b>${fp(st.bh.dd)}</b>; sizing the position by Undertow's forecast gives <b>${fp(st.uw.dd)}</b>. ${lead} Undertow trades <b>${st.uw.turn.toFixed(1)}×</b> its capital a year against <b>${st.roll.turn.toFixed(1)}×</b> for rolling std, and every unit of turnover costs ${S.cost} bps.`;
+}
+function drawBt(day){
+  const bt=D.bt;if(!bt)return;
+  const lines=(x,w,key,Y,pick)=>{
+    for(const [k,,col,dash] of BT){if(pick&&!pick.includes(k))continue;
+      x.strokeStyle=col;x.lineWidth=k==='uw'?1.8:1.1;x.setLineDash(dash==='dashed'?[5,3]:[]);path(x,w,bt[k][key],day,Y,BT_START);}
+    x.setLineDash([]);};
+  {const[x,w,h]=fit($('bt1')),top=6,bot=h-6,lo=Math.min(.9,bt.eqMin*.97),hi=bt.eqMax*1.03,Y=v=>bot-(v-lo)/(hi-lo)*(bot-top);
+    yAxis(x,w,top,bot,lo,hi,v=>v.toFixed(2),4);
+    x.strokeStyle=C.grid;x.setLineDash([2,4]);x.beginPath();x.moveTo(44,Y(1)+.5);x.lineTo(w-6,Y(1)+.5);x.stroke();x.setLineDash([]);
+    lines(x,w,'eq',Y);marks(x,w,top,bot,day);}
+  {const[x,w,h]=fit($('bt2')),top=6,bot=h-6,lo=Math.min(-.05,bt.ddMin*1.05),Y=v=>top+(0-v)/(0-lo)*(bot-top);
+    yAxis(x,w,top,bot,lo,0,v=>(v*100).toFixed(0)+'%',3);
+    lines(x,w,'dd',Y);marks(x,w,top,bot,day);}
+  {const[x,w,h]=fit($('bt3')),top=6,bot=h-20,Y=v=>bot-v/BT_CAP*(bot-top);
+    yAxis(x,w,top,bot,0,BT_CAP,v=>v.toFixed(1)+'×',3);
+    lines(x,w,'pos',Y,['uw','garch','roll']);marks(x,w,top,bot,day);
+    x.textAlign='center';x.textBaseline='top';x.fillStyle=C.dim;x.font=FONT;
+    for(let t=0;t<D.T+H;t+=50)x.fillText(dateLabel(t,true).toUpperCase(),X(t,w),bot+6);}
 }
 // posterior samples for the fan: inverse-CDF draws from the stored density
 function cumulative(f,t){const c=new Float32Array(G);let a=0;for(let b=0;b<G;b++){a+=f.dens[t*G+b];c[b]=a;}for(let b=0;b<G;b++)c[b]/=a||1;return c;}
@@ -528,6 +635,7 @@ function render(){
   if(real)rows.push(['VIX',isFinite(D.vix[day])?pct(D.vix[day]):'–']);
   $('rows').innerHTML=rows.map((r,i)=>`<div class="row"><span class="muted">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
   $('fcLabel').textContent=S.forecast?'FORECAST FAN · 20D →':'';$('dayN').textContent=day;$('drawn').textContent=Math.min(n,KSHOW)+' / '+n.toLocaleString()+' DRAWN';
+  renderBt(day);
   $('play').textContent=S.playing?'Pause':'Play';
   $('speedLab').textContent=S.speed.toFixed(1)+' d/s';$('phiLab').textContent=S.phi.toFixed(3);$('sigLab').textContent=S.sig.toFixed(2);$('nLab').textContent=n.toLocaleString();
   $('phiTLab').textContent=S.phiT.toFixed(3);$('sigTLab').textContent=S.sigT.toFixed(2);
@@ -551,6 +659,8 @@ function setup(){
   let pending=false;const later=fn=>{if(pending)return;pending=true;setTimeout(()=>{pending=false;fn();},20);};
   const slide=key=>e=>{S[key]=+e.target.value;render();later(rebuild);};   // labels now, filter re-run right after
   $('phi').oninput=slide('phi');$('sig').oninput=slide('sig');$('nIdx').oninput=slide('nIdx');
+  const btSlide=key=>e=>{S[key]=+e.target.value;D.bt=computeBt(D);redraw();render();};
+  $('tgt').oninput=btSlide('tgt');$('cost').oninput=btSlide('cost');
   $('phiT').oninput=slide('phiT');$('sigT').oninput=slide('sigT');
   $('jump').onchange=e=>{S.jump=e.target.checked;later(rebuild);};$('tnoise').onchange=e=>{S.tnoise=e.target.checked;later(rebuild);};
   window.addEventListener('keydown',e=>{
@@ -583,6 +693,7 @@ function init(){
   $('enter').onclick=enter;$('enter').focus({preventScroll:true});
   new ResizeObserver(redraw).observe($('stack'));
   new ResizeObserver(redraw).observe(document.querySelector('main.chart'));
+  new ResizeObserver(redraw).observe($('btRows').closest('section'));
   if(document.fonts)document.fonts.ready.then(redraw);
   let last=performance.now();const loop=now=>{const dt=Math.min(.1,(now-last)/1000);last=now;frame(dt);requestAnimationFrame(loop);};
   requestAnimationFrame(loop);
