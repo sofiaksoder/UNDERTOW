@@ -12,7 +12,7 @@ trails GARCH by about 3 standard errors, and the jump variant closes the gap.
 
 **Live demo:** https://sofiaksoder.github.io/undertow/ (deployed by `.github/workflows/pages.yml`).
 To run it locally: `python3 -m http.server`, then open `/web/index.html`.
-New to the topic? The in-site [plain-language guide](web/guide.html) explains what the demo shows,
+New to the topic? The in-site [guide](web/guide.html) explains what the demo shows,
 how the filter works and how to use every control.
 
 ![Undertow opening screen](docs/figures/demo_intro.jpg)
