@@ -24,6 +24,7 @@ N = 2000
 PHIS = [0.90, 0.94, 0.96, 0.97, 0.98, 0.99, 0.995]
 SIGS = [0.05, 0.08, 0.11, 0.15, 0.20, 0.27, 0.35, 0.45]
 MU_OFFSETS = [-0.4, 0.0, 0.4]
+SURFACE_SEEDS = 5
 JUMP_P, JUMP_M, JUMP_S = [0.003, 0.01, 0.03], [0.5, 1.0, 1.5], 0.5
 DOFS = [4.0, 6.0, 10.0, 20.0, 50.0]
 
@@ -50,6 +51,52 @@ def _loglik(job: dict) -> float:
 
 def moment_mu(r: np.ndarray, phi: float, sig: float) -> float:
     return float(np.log(np.mean(r**2)) - 0.5 * sig**2 / (1 - phi**2))
+
+
+def surface_grid(ex, train: np.ndarray, n_train: int, off: float) -> dict:
+    """Training log-likelihood over the (phi, sigma_eta) grid at one mu offset, mean and standard error
+    over SURFACE_SEEDS filter seeds (the likelihood estimate is itself noisy)."""
+    jobs = [{"phi": ph, "sig": sg, "mu": moment_mu(train, ph, sg) + off, "seed": sd, "n": n_train}
+            for ph in PHIS for sg in SIGS for sd in range(SURFACE_SEEDS)]
+    ll = np.array(list(ex.map(_loglik, jobs, chunksize=4))).reshape(len(PHIS), len(SIGS), SURFACE_SEEDS)
+    ll[~np.isfinite(ll)] = np.nan
+    return {"phi": PHIS, "sigma_eta": SIGS, "mu_offset": off, "particles": N, "seeds": SURFACE_SEEDS,
+            "mean": np.nanmean(ll, axis=2).tolist(),
+            "se": (np.nanstd(ll, axis=2, ddof=1) / np.sqrt(SURFACE_SEEDS)).tolist()}
+
+
+def plot_surface(surf: dict, best: dict) -> None:
+    """Heatmap of the mean log-likelihood relative to the best cell, with the 95% region."""
+    mean, se = np.array(surf["mean"]), np.array(surf["se"])
+    rel = mean - np.nanmax(mean)
+    top = np.unravel_index(np.nanargmax(mean), mean.shape)
+    near = rel > -20
+    fig, ax = plt.subplots(figsize=(6.6, 4.8))
+    im = ax.imshow(rel, origin="lower", aspect="auto", cmap=style.AQUA, vmin=-20, vmax=0)
+    ax.contour(rel, levels=[-3.0], colors=[style.INK], linewidths=1.0, linestyles="--")
+    ax.set_xticks(range(len(SIGS)), [f"{x:.2f}" for x in SIGS])
+    ax.set_yticks(range(len(PHIS)), [f"{x:.3f}" for x in PHIS])
+    ax.set_xlabel(r"$\sigma_\eta$"); ax.set_ylabel(r"$\phi$"); ax.grid(False)
+    sel = (PHIS.index(best["phi"]), SIGS.index(best["sig"]))
+    gap = rel[PHIS.index(0.97), SIGS.index(0.15)]
+    if sel == tuple(int(i) for i in top):
+        ax.plot(sel[1], sel[0], "o", color=style.CORAL, ms=9, mfc="none", mew=1.6,
+                label=r"best cell = selected fit ($\phi$ %.2f, $\sigma_\eta$ %.2f)" % (best["phi"], best["sig"]))
+    else:
+        ax.plot(top[1], top[0], "*", color=style.INK, ms=11, label="best cell")
+        ax.plot(sel[1], sel[0], "o", color=style.CORAL, ms=9, mfc="none", mew=1.6,
+                label="selected fit (re-scored on more seeds)")
+    ax.plot(SIGS.index(0.15), PHIS.index(0.97), "s", color=style.CORAL, ms=8, mfc="none", mew=1.6,
+            label=r"default ($\phi$ 0.97, $\sigma_\eta$ 0.15): %.1f below the best" % -gap)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=1, fontsize=8, handletextpad=0.6)
+    cb = fig.colorbar(im, ax=ax, extend="min"); cb.set_label("log-likelihood relative to the best cell")
+    ax.set_title("SPY 2010-2018 (fitting years): filter log-likelihood", loc="left", color=style.INK)
+    fig.text(0.01, 0.01, f"N = {surf['particles']:,} particles, mean of {surf['seeds']} seeds per cell; "
+             f"median s.e. near the top {np.nanmedian(se[near]):.1f}.\nDashed line: within 3.0 of the best cell. "
+             "mu set from the sample variance.", fontsize=7.5, color=style.MUTED, va="bottom")
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    (OUT / "figures").mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "figures" / "loglik_surface.png", dpi=160)
 
 
 def main() -> None:
@@ -112,24 +159,12 @@ def main() -> None:
                             "test_loglik_per_day": float(np.mean(te) / n_test)}
             print(f"{name:38s} train {np.mean(tr):9.1f}   test {np.mean(te):9.1f}")
 
-    # heatmap at the best mu offset
-    grid = np.full((len(PHIS), len(SIGS)), np.nan)
-    for j, v in zip(jobs, ll):
-        if abs(j["off"] - best["off"]) < 1e-9:
-            grid[PHIS.index(j["phi"]), SIGS.index(j["sig"])] = v
-    fig, ax = plt.subplots(figsize=(6.4, 4.4))
-    im = ax.imshow(grid - np.nanmax(grid), origin="lower", aspect="auto", cmap=style.AQUA,
-                   vmin=-200, vmax=0)
-    ax.set_xticks(range(len(SIGS)), [f"{x:.2f}" for x in SIGS]); ax.set_yticks(range(len(PHIS)),
-                                                                            [f"{x:.3f}" for x in PHIS])
-    ax.set_xlabel(r"$\sigma_\eta$"); ax.set_ylabel(r"$\phi$"); ax.grid(False)
-    ax.plot(SIGS.index(best["sig"]), PHIS.index(best["phi"]), "o", color=style.CORAL, ms=8,
-            mfc="none", mew=1.5)
-    cb = fig.colorbar(im, ax=ax); cb.set_label("log-likelihood minus its maximum (clipped at -200)")
-    ax.set_title("SPY 2010-2018: filter log-likelihood", loc="left", color=style.INK)
-    fig.tight_layout()
-    (OUT / "figures").mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT / "figures" / "loglik_surface.png", dpi=160)
+    # likelihood surface at the best mu offset: every cell averaged over SURFACE_SEEDS seeds
+    with ProcessPoolExecutor(8, initializer=_init, initargs=(r,)) as ex:
+        surf = surface_grid(ex, train, n_train, best["off"])
+    plot_surface(surf, best)
+    (OUT / "results").mkdir(exist_ok=True)
+    (OUT / "results" / "loglik_surface.json").write_text(json.dumps(surf, indent=2))
 
     (OUT / "results").mkdir(exist_ok=True)
     (OUT / "results" / "fit.json").write_text(json.dumps({

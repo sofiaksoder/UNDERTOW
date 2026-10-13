@@ -59,6 +59,18 @@ as a whole: the likelihood prefers a near-Gaussian t (dof 20) and a rare jump. A
 such as PMMH (particle marginal Metropolis-Hastings), which would also give uncertainty on the
 parameters, is the natural next step.
 
+The figure shows the fitting years only (2010-2018; the held-out years are never used to choose
+parameters). Each cell is the training log-likelihood averaged over 5 filter seeds with 2,000 particles,
+relative to the best cell; the Monte Carlo standard error near the top is about 0.3
+(`docs/results/loglik_surface.json` has every cell's mean and s.e.). The best cell is the selected fit
+(`phi` 0.94, `sigma_eta` 0.35). The hand-set default sits 31.8 below it, far outside Monte Carlo noise, which
+is why the SPY comparison uses the fitted values and reports the defaults only as a baseline. The dashed
+line encloses the cells within 3.0 of the best: a ridge running from (0.94, 0.35) to (0.97, 0.27), so
+`phi` and `sigma_eta` are only weakly separated, but nothing near `sigma_eta` = 0.15 is competitive.
+
+That preference for a larger `sigma_eta` is a property of real SPY returns. The simulated shock
+experiments below use the true simulated value (0.15) for every filter, so they are not affected by it.
+
 ![log-likelihood surface](docs/figures/loglik_surface.png)
 
 ## Results
@@ -240,7 +252,7 @@ is known) or on **real SPY returns** (October 2018 to December 2020, `web/data/s
     pip install -r requirements.txt && pip install -e .
     pytest                                    # unit tests
     python scripts/convergence.py             # -> docs/figures/convergence.png
-    python scripts/fit_params.py              # -> docs/results/fit.json (needs network the first time)
+    python scripts/fit_params.py              # -> docs/results/fit.json, loglik_surface.json and its figure (needs network the first time)
     python scripts/spy_run.py                 # out-of-sample SPY evaluation + Diebold-Mariano
     python scripts/backtest.py                # -> docs/results/backtest.json, docs/figures/backtest.png (about a minute)
     python scripts/shock_response.py          # -> docs/figures/shock_response.png (a few minutes, 8 cores)
