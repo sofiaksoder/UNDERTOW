@@ -151,6 +151,54 @@ from GARCH there (p = 0.49 for the jump variant).
 
 ![SPY 2019-2020](docs/figures/spy_2020.png)
 
+### Volatility-targeting backtest (SPY, 2019-2024, after costs)
+
+Does a better volatility forecast make a better strategy? Each strategy holds a long-only position in
+SPY of `w = clip(10% / forecast, 0, 1.5)` (the rest in cash at 0%), so only the forecast differs. A
+forecast made after day t sets the weight held on day t+1, and moving the weight costs 5 bps per unit of
+turnover. Everything with parameters was fitted on 2010-2018, including GARCH. Sharpe uses a zero
+risk-free rate. The filter rows are the mean over 5 seeds (the seed-to-seed Sharpe range is 1.027-1.031).
+
+| strategy (net of 5 bps) | return | vol | Sharpe | max drawdown | turnover / yr | avg position |
+|---|---:|---:|---:|---:|---:|---:|
+| Undertow (particle filter) | 10.7% | 10.4% | 1.03 | -13.1% | 15.9x | 0.71 |
+| Undertow + jump | 10.5% | 10.2% | 1.03 | **-12.9%** | 16.1x | 0.70 |
+| GARCH(1,1), fit 2010-18 | 11.0% | 10.4% | **1.06** | -13.6% | 12.7x | 0.72 |
+| Rolling std (20d) | 10.8% | 11.0% | 0.98 | -14.1% | 7.4x | 0.75 |
+| EWMA (0.94) | 10.3% | 10.4% | 0.99 | -13.3% | **5.7x** | 0.71 |
+| Buy and hold | 17.9% | 19.8% | 0.90 | -33.7% | 0.2x | 1.00 |
+
+Net Sharpe as costs rise (turnover does not change, so the ordering moves with cost):
+
+| strategy | 0 bps | 5 bps | 10 bps | 25 bps |
+|---|---:|---:|---:|---:|
+| Undertow (particle filter) | 1.11 | 1.03 | 0.95 | 0.72 |
+| Undertow + jump | 1.11 | 1.03 | 0.95 | 0.72 |
+| GARCH(1,1) | 1.12 | 1.06 | 1.00 | 0.81 |
+| Rolling std (20d) | 1.01 | 0.98 | 0.95 | 0.85 |
+| EWMA (0.94) | 1.02 | 0.99 | 0.96 | 0.88 |
+| Buy and hold | 0.90 | 0.90 | 0.90 | 0.90 |
+
+![Volatility-targeting backtest](docs/figures/backtest.png)
+
+Reading it:
+
+- **Targeting volatility helps, whichever forecast drives it.** Every strategy cuts the worst drawdown
+  from -34% (March 2020) to about -13% (the 2022 selloff) and has a higher Sharpe than buy-and-hold,
+  though not significantly (Undertow vs buy-and-hold: +0.13, interval -0.31 to +0.50). That comes from
+  the scaling, not from Undertow.
+- **The forecasts are not separable on Sharpe.** A paired block bootstrap (seed 0, 20-day blocks) puts
+  the filter's Sharpe at +0.05 over rolling std (95% interval -0.12 to +0.21) and -0.03 against GARCH
+  (-0.08 to +0.03). Six years of one asset cannot rank these.
+- **Undertow trades more than the others.** At 5 bps GARCH is nominally ahead, and the filter's turnover
+  is more than double rolling std's, so at 10 bps its Sharpe has fallen to rolling std's and at 25 bps
+  below it. This is not Monte Carlo noise: the same filter with 20,000 particles has the identical
+  turnover. It is the fitted `sigma_eta = 0.35`, which makes the filter respond sharply to each return.
+  Rerunning the filter with `sigma_eta = 0.15` cut turnover to 6.5x and gave Sharpe 1.05, but that was
+  chosen after seeing the test years and is a diagnostic, not a result.
+- **The jump variant helps nothing here.** Its crash drawdown is close to the others (-11.2% vs -10.7%
+  to -12.4% over Feb-Jun 2020).
+
 ### Browser filter matches the Python filter
 
 The demo's JavaScript filter and `pfvol` agree within Monte Carlo error on the same input
@@ -194,6 +242,7 @@ is known) or on **real SPY returns** (October 2018 to December 2020, `web/data/s
     python scripts/convergence.py             # -> docs/figures/convergence.png
     python scripts/fit_params.py              # -> docs/results/fit.json (needs network the first time)
     python scripts/spy_run.py                 # out-of-sample SPY evaluation + Diebold-Mariano
+    python scripts/backtest.py                # -> docs/results/backtest.json, docs/figures/backtest.png (about a minute)
     python scripts/shock_response.py          # -> docs/figures/shock_response.png (a few minutes, 8 cores)
     python scripts/make_gif.py                # -> docs/figures/shock_response.gif
     python scripts/export_web_data.py         # -> web/data/spy.json
@@ -216,4 +265,8 @@ Layout: `pfvol/` (model, filter, baselines, data, metrics), `tests/`, `scripts/`
   tests account for noise in the loss differences, but the Feb-Jun 2020 window is only 104 days.
 - **The demo's baselines are fixed:** EWMA uses 0.94 and GARCH uses offline-fitted parameters, so
   neither follows the sliders. The realized-volatility line on real data uses future days.
+- **The backtest is one asset and six years,** with a flat per-turnover cost (no spread model, market
+  impact, financing or taxes), daily rebalancing, a 0% cash return and a Sharpe with a zero risk-free
+  rate. Position sizes are not rounded to tradable lots. Differences between the forecasts are well
+  inside the bootstrap interval.
 - GARCH sometimes reported optimizer convergence warnings on simulated paths; results were kept.
